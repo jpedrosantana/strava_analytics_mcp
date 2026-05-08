@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "strava-analytics": {
+      "command": "uv",
+      "args": ["run", "strava-mcp", "serve"],
+      "cwd": "/caminho/para/strava_analytics_mcp"
+    }
+  }
+}
