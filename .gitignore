@@ -10,3 +10,4 @@ logs/
 target/
 dbt_packages/
 .claude/settings.local.json
+.mcp.json

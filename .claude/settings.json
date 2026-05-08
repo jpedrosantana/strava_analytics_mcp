@@ -1,8 +1,3 @@
 {
-  "mcpServers": {
-    "strava-analytics": {
-      "command": "uv",
-      "args": ["run", "strava-mcp", "serve"]
-    }
-  }
+  "enableAllProjectMcpServers": true
 }
