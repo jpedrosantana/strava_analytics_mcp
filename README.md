@@ -49,7 +49,7 @@ uv run strava-mcp sync --full --compute   # backfill + recalcular métricas
 
 ## Integração com Claude Code
 
-Adicione ao `.claude/settings.json` do projeto (já configurado neste repo):
+Crie o arquivo `.mcp.json` na raiz do projeto (já está no `.gitignore` — cada máquina configura o próprio):
 
 ```json
 {
@@ -57,13 +57,17 @@ Adicione ao `.claude/settings.json` do projeto (já configurado neste repo):
     "strava-analytics": {
       "command": "uv",
       "args": ["run", "strava-mcp", "serve"],
-      "cwd": "/caminho/para/strava_analytics_mcp"
+      "cwd": "/caminho/absoluto/para/strava_analytics_mcp"
     }
   }
 }
 ```
 
-Reinicie o Claude Code e o servidor estará disponível. Exemplos de perguntas:
+O `.claude/settings.json` do repositório já contém `enableAllProjectMcpServers: true`, que aprova automaticamente o servidor ao abrir o projeto. Reinicie o Claude Code e o servidor estará disponível.
+
+> **Nota:** Se `uv` não estiver no PATH do Claude Code, use o caminho completo do executável (ex: `/home/user/.local/bin/uv`).
+
+Exemplos de perguntas:
 
 - *"Como foi meu treino esta semana comparado à semana passada?"*
 - *"Qual minha forma atual? Estou pronto para um treino pesado amanhã?"*
