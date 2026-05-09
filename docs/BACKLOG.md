@@ -32,6 +32,14 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** menos falsos positivos em trajetos com perfil acidentado, classificação mais justa de "rotas duras" vs. "dia ruim".
 
+### Extrair `average_temp` do `raw_json` para coluna própria
+
+**Problema:** o `what_drives_my_performance` consulta `activity_metrics.weather_temp_c`, que está sempre nulo (nunca populamos esse campo). Resultado: a feature de temperatura tem importância ~0 no modelo, mesmo que ~41% das atividades tenham temperatura no `raw_json` do Strava.
+
+**Solução proposta:** durante o `compute-metrics`, ler `raw_json.average_temp` (do sensor do Garmin) e gravar em `activity_metrics.weather_temp_c`. Sem precisar de Open-Meteo (cf. ADR 0002).
+
+**Impacto:** o modelo de drivers passa a refletir o impacto real da temperatura no pace.
+
 ---
 
 ## Sincronização

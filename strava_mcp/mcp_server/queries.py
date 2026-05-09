@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from strava_mcp.analytics.anomalies import detect_outliers, fit_pace_model
+from strava_mcp.analytics.clustering import cluster_routes
 from strava_mcp.analytics.injury_risk import assess_injury_risk
+from strava_mcp.analytics.performance_drivers import fit_driver_model, rank_drivers
 from strava_mcp.analytics.predictions import predict_race_time as _predict_race_time
 
 # ---------------------------------------------------------------------------
@@ -855,4 +857,85 @@ def query_find_anomalies(
             "n_outliers": len(outliers),
         },
         "outliers": outliers,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 5.6 Route clustering and performance drivers
+# ---------------------------------------------------------------------------
+
+
+def query_get_route_clusters(
+    conn: sqlite3.Connection,
+    days_back: int = 365,
+    min_samples: int = 3,
+    eps_m: float = 100.0,
+) -> dict[str, Any]:
+    """Cluster recent runs by recurring start point + distance bin."""
+    cutoff = (date.today() - timedelta(days=days_back)).isoformat()
+    rows = _rows(
+        conn,
+        """
+        SELECT id, name, start_date_local, sport_type,
+               distance_m, moving_time_s, average_speed_mps, average_heartrate,
+               elevation_gain_m, start_latlng_lat, start_latlng_lng
+        FROM activities
+        WHERE sport_type IN ('Run', 'TrailRun')
+          AND start_date_local >= ?
+          AND start_latlng_lat IS NOT NULL
+          AND start_latlng_lng IS NOT NULL
+        """,
+        (cutoff,),
+    )
+    clusters = cluster_routes(rows, eps_m=eps_m, min_samples=min_samples)
+    clusters.sort(key=lambda c: c["n_activities"], reverse=True)
+    return {
+        "params": {"days_back": days_back, "eps_m": eps_m, "min_samples": min_samples},
+        "n_activities_evaluated": len(rows),
+        "n_clusters": len(clusters),
+        "clusters": clusters,
+    }
+
+
+def query_what_drives_my_performance(
+    conn: sqlite3.Connection,
+    days_back: int = 90,
+) -> dict[str, Any]:
+    """Train a Gradient Boosting model on recent runs and rank features by
+    importance — answers 'what most affects my pace right now?'"""
+    cutoff = (date.today() - timedelta(days=days_back)).isoformat()
+    rows = _rows(
+        conn,
+        """
+        SELECT a.id, a.name, a.start_date_local,
+               a.distance_m, a.moving_time_s, a.average_speed_mps,
+               a.average_heartrate, a.elevation_gain_m,
+               m.weather_temp_c AS temperature_c,
+               d.ctl, d.atl, d.tsb
+        FROM activities a
+        LEFT JOIN activity_metrics m ON m.activity_id = a.id
+        LEFT JOIN daily_metrics d ON d.date = DATE(a.start_date_local)
+        WHERE a.sport_type IN ('Run', 'TrailRun')
+          AND a.start_date_local >= ?
+          AND a.distance_m > 1000
+        """,
+        (cutoff,),
+    )
+
+    fitted = fit_driver_model(rows)
+    if fitted is None:
+        return {
+            "error": "insufficient_data",
+            "hint": ("Need at least 30 runs with HR data in the selected window to fit the model."),
+            "n_samples": len(rows),
+        }
+
+    drivers = rank_drivers(fitted)
+    return {
+        "params": {"days_back": days_back},
+        "model": {
+            "n_samples": fitted["n_samples"],
+            "r2_train": round(fitted["r2_train"], 3),
+        },
+        "drivers": drivers,
     }

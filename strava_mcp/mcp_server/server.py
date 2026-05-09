@@ -18,10 +18,12 @@ from strava_mcp.mcp_server.queries import (
     query_get_injury_risk,
     query_get_load_history,
     query_get_period_stats,
+    query_get_route_clusters,
     query_get_weekly_breakdown,
     query_list_activities,
     query_predict_race_time,
     query_search_activities,
+    query_what_drives_my_performance,
 )
 
 mcp = FastMCP(
@@ -303,6 +305,35 @@ def find_anomalies(
     """
     with _conn() as conn:
         return query_find_anomalies(conn, days_back=days_back, z_threshold=z_threshold)
+
+
+@mcp.tool()
+def get_route_clusters(
+    days_back: int = 365,
+    min_samples: int = 3,
+    eps_m: float = 100.0,
+) -> dict[str, Any]:
+    """Agrupa corridas por ponto de partida recorrente e faixa de distância.
+
+    Útil para descobrir as rotas que você corre mais (e seu pace típico em
+    cada uma). Usa DBSCAN com métrica haversine sobre as coordenadas iniciais.
+    Subagrupa por faixas de distância (≤6 km, 9–11 km, etc.) para distinguir
+    treinos curtos e longos no mesmo ponto.
+    """
+    with _conn() as conn:
+        return query_get_route_clusters(conn, days_back, min_samples, eps_m)
+
+
+@mcp.tool()
+def what_drives_my_performance(days_back: int = 90) -> dict[str, Any]:
+    """Identifica os fatores que mais influenciam seu pace em corridas.
+
+    Treina um Gradient Boosting prevendo velocidade média a partir de:
+    distância, elevação, FC média, CTL/ATL/TSB do dia, temperatura, dia da
+    semana e horário. Retorna ranking de importância (impurity + permutação).
+    """
+    with _conn() as conn:
+        return query_what_drives_my_performance(conn, days_back)
 
 
 # ---------------------------------------------------------------------------
