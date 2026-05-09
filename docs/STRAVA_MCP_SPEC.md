@@ -672,7 +672,31 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 
 **Aceitação:** conversa com Claude usando o MCP produz análises tipo "como foi meu trimestre?" com qualidade de coach experiente. Validar com prompts da seção 11.4.
 
-### Fase 8 — Polish e portfólio (objetivo: projeto público forte)
+### Fase 8 — Ajustes finos pós-review (objetivo: consolidar feedback externo antes do polish público)
+
+**Contexto:** após a Fase 7, o projeto passou por revisões externas que convergiram em pontos relacionados a qualidade da série temporal, clareza arquitetural e mensurabilidade dos critérios de polish. Esta fase consolida implementação, verificação e expansão do backlog em uma única passagem antes da Fase 9.
+
+**Implementação (entregar):**
+- [ ] Diagrama de arquitetura no README (Mermaid: `setup → sync → compute-metrics → serve → Claude`)
+- [ ] `docs/TROUBLESHOOTING.md` com cenários: OAuth expirado, 429 da Strava API, sync interrompido no meio, gaps de stream, reset do banco
+- [ ] Reescrever os critérios da Fase 9 de forma mensurável no próprio SPEC (badges, ≥3 screenshots, link de post publicado, etc.)
+
+**Verificação (auditoria do código atual; corrigir e anotar no commit se houver gap):**
+- [ ] CTL/ATL/TSB tratam dias sem atividade como TSS=0? Se não, decay quebra em períodos de descanso/lesão
+- [ ] Existe cache persistente para Open-Meteo? Backfill de 2 anos sem cache esgota rate limit
+- [ ] Há sanitização atual de FC spikes ou GPS jumps no `compute-metrics`?
+
+**Expansão do backlog (registrar em `docs/BACKLOG.md`, sem implementar):**
+- [ ] **Data Quality Layer** — expandir o item de GPS corrompido para englobar HR spikes, gaps de stream, pace impossível, mismatch moving vs elapsed time
+- [ ] `compare_cycles()` — tool comparando ciclo atual com melhor meia anterior
+- [ ] Versões `summary`/`detailed` em `generate_period_narrative` e `what_drives_my_performance`
+- [ ] Schemas MCP padronizados (envelope `{status, data, warnings, confidence}`)
+- [ ] Cross-validation + Spearman para validar `what_drives_my_performance`
+- [ ] Reorganização de `analytics/` em sub-pastas (`features/`, `metrics/`, `models/`, `diagnostics/`)
+
+**Aceitação:** README com diagrama legível; `TROUBLESHOOTING.md` cobrindo ≥4 cenários; checklist da Fase 9 reescrito de forma mensurável; cada item de Verificação fechado (correção implementada com nota no commit, ou commit explicando que não há gap); `BACKLOG.md` expandido com os 6 itens acima.
+
+### Fase 9 — Polish e portfólio (objetivo: projeto público forte)
 
 - [ ] README profissional: diagrama de arquitetura, screenshots de conversas reais, lista de análises, instruções claras de setup
 - [ ] Notebook Jupyter de exemplo (`examples/exploration.ipynb`) que exercita as funções de analytics fora do MCP
