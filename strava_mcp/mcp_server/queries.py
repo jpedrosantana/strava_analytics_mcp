@@ -8,7 +8,20 @@ from typing import Any
 from strava_mcp.analytics.anomalies import detect_outliers, fit_pace_model
 from strava_mcp.analytics.clustering import cluster_routes
 from strava_mcp.analytics.injury_risk import assess_injury_risk
+from strava_mcp.analytics.narrative import (
+    assemble_narrative,
+    count_concerns,
+    select_highlights,
+    summarize_form_change,
+)
 from strava_mcp.analytics.performance_drivers import fit_driver_model, rank_drivers
+from strava_mcp.analytics.plateau import (
+    assess_plateau,
+    days_since_last_pr,
+    ef_trend,
+    intensity_variety,
+    pace_at_lthr_trend,
+)
 from strava_mcp.analytics.predictions import predict_race_time as _predict_race_time
 
 # ---------------------------------------------------------------------------
@@ -939,3 +952,216 @@ def query_what_drives_my_performance(
         },
         "drivers": drivers,
     }
+
+
+# ---------------------------------------------------------------------------
+# 5.7 Narrative and diagnosis
+# ---------------------------------------------------------------------------
+
+
+def _activities_in_period(
+    conn: sqlite3.Connection, start_date: str, end_date: str
+) -> list[dict[str, Any]]:
+    """Activities + their metrics within [start_date, end_date]."""
+    return _rows(
+        conn,
+        """
+        SELECT a.id, a.name, a.sport_type, a.start_date_local,
+               a.distance_m, a.moving_time_s, a.average_speed_mps,
+               a.average_heartrate, a.elevation_gain_m,
+               m.trimp, m.hr_tss, m.aerobic_efficiency
+        FROM activities a
+        LEFT JOIN activity_metrics m ON m.activity_id = a.id
+        WHERE DATE(a.start_date_local) BETWEEN ? AND ?
+        ORDER BY a.start_date_local
+        """,
+        (start_date, end_date),
+    )
+
+
+def query_generate_period_narrative(
+    conn: sqlite3.Connection,
+    start_date: str,
+    end_date: str,
+) -> dict[str, Any]:
+    """Build a structured narrative of a training period.
+
+    Output is data-only (numbers, highlights, concerns); the LLM consuming the
+    MCP tool is expected to write the prose.
+    """
+    activities = _activities_in_period(conn, start_date, end_date)
+    period_stats = query_get_period_stats(conn, start_date, end_date)
+
+    # Prior period of the same length for comparison
+    try:
+        d0 = date.fromisoformat(start_date)
+        d1 = date.fromisoformat(end_date)
+    except ValueError:
+        return {"error": "invalid_date_format", "hint": "use YYYY-MM-DD"}
+    span = (d1 - d0).days
+    prior_start = (d0 - timedelta(days=span + 1)).isoformat()
+    prior_end = (d0 - timedelta(days=1)).isoformat()
+    prior_stats = query_get_period_stats(conn, prior_start, prior_end)
+
+    highlights = select_highlights(activities)
+
+    load_history = _rows(
+        conn,
+        "SELECT date, ctl, atl, tsb FROM daily_metrics WHERE date BETWEEN ? AND ? ORDER BY date",
+        (start_date, end_date),
+    )
+    form_change = summarize_form_change(load_history)
+
+    high_acwr_days = sum(
+        1
+        for d in load_history
+        if (d.get("ctl") or 0) > 0 and ((d.get("atl") or 0) / (d.get("ctl") or 1)) > 1.3
+    )
+
+    anomalies = query_find_anomalies(
+        conn,
+        days_back=max(span + 1, 30),
+        z_threshold=2.0,
+    )
+    anomalies_in_period = [
+        o for o in anomalies.get("outliers", []) if start_date <= o["date"] <= end_date
+    ]
+    concerns = count_concerns(activities, len(anomalies_in_period), high_acwr_days)
+
+    return assemble_narrative(
+        period={"start": start_date, "end": end_date, "span_days": span + 1},
+        period_stats=period_stats,
+        prior_stats=prior_stats,
+        highlights=highlights,
+        form_change=form_change,
+        concerns=concerns,
+    )
+
+
+def _monthly_ef_series(conn: sqlite3.Connection, weeks_back: int) -> list[tuple[int, float]]:
+    """Median EF per month over the last `weeks_back` weeks. Indexed 0..N."""
+    cutoff = (date.today() - timedelta(weeks=weeks_back)).isoformat()
+    rows = _rows(
+        conn,
+        """
+        SELECT strftime('%Y-%m', a.start_date_local) AS month,
+               m.aerobic_efficiency AS ef
+        FROM activity_metrics m
+        JOIN activities a ON a.id = m.activity_id
+        WHERE a.sport_type IN ('Run','TrailRun')
+          AND a.start_date_local >= ?
+          AND m.aerobic_efficiency IS NOT NULL
+        """,
+        (cutoff,),
+    )
+    by_month: dict[str, list[float]] = {}
+    for r in rows:
+        by_month.setdefault(r["month"], []).append(r["ef"])
+    months = sorted(by_month.keys())
+    out: list[tuple[int, float]] = []
+    for i, m in enumerate(months):
+        vals = sorted(by_month[m])
+        median = (
+            vals[len(vals) // 2]
+            if len(vals) % 2
+            else (vals[len(vals) // 2 - 1] + vals[len(vals) // 2]) / 2
+        )
+        out.append((i, median))
+    return out
+
+
+def _pace_at_lthr_series(
+    conn: sqlite3.Connection, weeks_back: int, lthr: float, tolerance: float = 5.0
+) -> list[tuple[int, float]]:
+    """Average speed for runs whose avg HR is within ±tolerance of LTHR.
+    Bucketed by week index (oldest = 0)."""
+    cutoff = date.today() - timedelta(weeks=weeks_back)
+    rows = _rows(
+        conn,
+        """
+        SELECT a.start_date_local AS dt, a.average_speed_mps AS v, a.average_heartrate AS hr
+        FROM activities a
+        WHERE a.sport_type IN ('Run','TrailRun')
+          AND a.start_date_local >= ?
+          AND a.average_heartrate BETWEEN ? AND ?
+          AND a.average_speed_mps IS NOT NULL
+          AND a.distance_m >= 5000
+        ORDER BY a.start_date_local
+        """,
+        (cutoff.isoformat(), lthr - tolerance, lthr + tolerance),
+    )
+    if not rows:
+        return []
+
+    week_buckets: dict[int, list[float]] = {}
+    for r in rows:
+        run_date = date.fromisoformat(str(r["dt"])[:10])
+        week_idx = (run_date - cutoff).days // 7
+        week_buckets.setdefault(week_idx, []).append(r["v"])
+    return [(w, sum(v) / len(v)) for w, v in sorted(week_buckets.items())]
+
+
+def _days_since_last_pr(conn: sqlite3.Connection) -> int | None:
+    """Days since the most recent PR (across standard distances)."""
+    prs = query_find_personal_records(conn)
+    valid_dates = [p["date"] for p in prs if p.get("status") == "ok" and p.get("date")]
+    if not valid_dates:
+        return None
+    most_recent = max(valid_dates)
+    try:
+        d = date.fromisoformat(most_recent)
+    except ValueError:
+        return None
+    return (date.today() - d).days
+
+
+def _athlete_lthr(conn: sqlite3.Connection) -> float:
+    row = _one(conn, "SELECT value FROM athlete_config WHERE key='lthr'", ())
+    if row and row.get("value"):
+        try:
+            return float(row["value"])
+        except (TypeError, ValueError):
+            pass
+    return 177.0  # fallback to the known athlete LTHR from CLAUDE.md
+
+
+def query_diagnose_plateau(
+    conn: sqlite3.Connection,
+    weeks_back: int = 12,
+) -> dict[str, Any]:
+    """Run all four plateau indicators and return the assembled diagnosis."""
+    lthr = _athlete_lthr(conn)
+
+    ef_series = _monthly_ef_series(conn, weeks_back)
+    pace_series = _pace_at_lthr_series(conn, weeks_back, lthr)
+
+    # Zone seconds for the analyzed window
+    cutoff = (date.today() - timedelta(weeks=weeks_back)).isoformat()
+    zone_row = (
+        _one(
+            conn,
+            """
+        SELECT
+            COALESCE(SUM(m.z1_seconds),0) AS z1_seconds,
+            COALESCE(SUM(m.z2_seconds),0) AS z2_seconds,
+            COALESCE(SUM(m.z3_seconds),0) AS z3_seconds,
+            COALESCE(SUM(m.z4_seconds),0) AS z4_seconds,
+            COALESCE(SUM(m.z5_seconds),0) AS z5_seconds
+        FROM activity_metrics m
+        JOIN activities a ON a.id = m.activity_id
+        WHERE a.sport_type IN ('Run','TrailRun')
+          AND a.start_date_local >= ?
+        """,
+            (cutoff,),
+        )
+        or {}
+    )
+
+    diagnosis = assess_plateau(
+        ef=ef_trend(ef_series),
+        pace_lthr=pace_at_lthr_trend(pace_series),
+        pr_age=days_since_last_pr(_days_since_last_pr(conn)),
+        intensity=intensity_variety(zone_row),
+    )
+    diagnosis["params"] = {"weeks_back": weeks_back, "lthr_bpm": lthr}
+    return diagnosis
