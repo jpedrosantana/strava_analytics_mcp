@@ -11,3 +11,19 @@ Critérios de aceitação por fase estão no SPEC — atendê-los é obrigatóri
 
 Decisões não cobertas: registrar em `docs/decisions/NNNN-titulo.md`
 no formato ADR.
+
+## Perfil do atleta
+
+Parâmetros estimados pelo histórico de corridas (não de teste laboratorial):
+
+- FCmáx: 201 bpm (registrado no Teste de 6Km em 28/02/2026)
+- LTHR: 177 bpm (média das FC em meias maratonas de prova: 173–179 bpm)
+- FCrest: 50 bpm (placeholder — medir ao acordar para refinar)
+- Sexo: masculino
+  
+## Contexto de Treino/Objetivo Atual
+Faço corrida e musculação há quase 1 ano e meio, minha rotina de treinos de musculação são de 2-3x na semana (sendo 2 de funcional e 1 musculação) e de corrida é de 3-4x na semana (normalmente 2 treinos de rodage, 1 intervalado/fartlek e 1 longão de sábado). Meu objetivo atual é melhorar minha performance na corrida, atualmente estou me preparando para uma maratona em Julho. Meu histórico de provas tem destaque com as meias maratonas, completei 7 até o momento e até a maratona tenho mais uma prova de 21Km e outra de 25Km para fazer.
+
+## Status atual dos dados
+Streams: 100% completos (299/299 atividades). Último download: 08/05/2026.
+compute-metrics: executado em 08/05/2026 com streams 100% completos (EF e decoupling calculados via stream).

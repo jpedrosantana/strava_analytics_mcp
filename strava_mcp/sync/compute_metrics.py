@@ -24,6 +24,7 @@ from strava_mcp.db.migrations import apply_migrations
 from strava_mcp.db.repositories import (
     AthleteConfigRepository,
     MetricsRepository,
+    StreamRepository,
 )
 
 _DEFAULT_HR_REST = 50.0
@@ -63,8 +64,12 @@ def compute_activity_metrics(
     lthr: float | None,
     threshold_pace_mps: float | None,
     sex: str = "male",
+    distance_stream: list[float] | None = None,
+    altitude_stream: list[float] | None = None,
+    time_stream: list[int] | None = None,
+    hr_stream: list[float] | None = None,
 ) -> dict[str, Any]:
-    """Compute all per-activity metrics from summary data only."""
+    """Compute all per-activity metrics, using streams when available."""
     avg_hr = activity.get("average_heartrate")
     moving_time = activity.get("moving_time_s") or 0
 
@@ -80,7 +85,13 @@ def compute_activity_metrics(
     )
 
     ngp_metrics = activity_ngp_metrics(activity, threshold_pace_mps)
-    eff_metrics = activity_efficiency_metrics(activity)
+    eff_metrics = activity_efficiency_metrics(
+        activity,
+        distance_stream=distance_stream,
+        altitude_stream=altitude_stream,
+        time_stream=time_stream,
+        hr_stream=hr_stream,
+    )
 
     zone_secs: dict[str, int] = {
         "z1_seconds": 0,
@@ -144,7 +155,18 @@ def compute_all_metrics(
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
+        activity_ids_with_streams = StreamRepository.get_activity_ids_with_streams(conn)
         for idx, activity in enumerate(activities):
+            distance_stream = altitude_stream = time_stream = hr_stream = None
+            if (
+                activity.get("sport_type") == "Run"
+                and activity["id"] in activity_ids_with_streams
+            ):
+                distance_stream = StreamRepository.get(conn, activity["id"], "distance")
+                altitude_stream = StreamRepository.get(conn, activity["id"], "altitude")
+                time_stream = StreamRepository.get(conn, activity["id"], "time")
+                hr_stream = StreamRepository.get(conn, activity["id"], "heartrate")
+
             metrics = compute_activity_metrics(
                 activity,
                 hr_rest=hr_rest,
@@ -152,6 +174,10 @@ def compute_all_metrics(
                 lthr=lthr,
                 threshold_pace_mps=threshold_pace_mps,
                 sex=sex,
+                distance_stream=distance_stream,
+                altitude_stream=altitude_stream,
+                time_stream=time_stream,
+                hr_stream=hr_stream,
             )
             MetricsRepository.upsert_activity_metrics(conn, activity["id"], metrics)
 
