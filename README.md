@@ -87,7 +87,8 @@ Exemplos de perguntas:
 | `get_weekly_breakdown` | Volume semana-a-semana das últimas N semanas |
 | `get_current_form` | CTL, ATL, TSB e ACWR de hoje com histórico de 14 dias |
 | `get_load_history` | Série histórica diária de carga de treino |
-| `get_injury_risk_assessment` | Score de risco de lesão baseado em ACWR e picos de volume |
+| `get_injury_risk_assessment` | Score de risco de lesão (ACWR + spikes de volume + degradação de EF) |
+| `find_anomalies` | Detecta corridas com pace fora do esperado via regressão sobre o histórico |
 | `get_aerobic_efficiency_trend` | Tendência mensal de EF em corridas |
 | `get_decoupling_trend` | Decoupling cardíaco em corridas longas (≥60min) |
 | `find_personal_records` | Melhores tempos em distâncias-padrão (5K, 10K, 21K, maratona...) |
@@ -124,7 +125,7 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 3 | Analytics core (TRIMP, CTL/ATL/TSB, zonas, NGP, EF) | ✅ |
 | 4 | MCP server v0.1 — 13 tools, usável no Claude | ✅ |
 | 5 | Predições (Riegel, VDOT); clima opcional ([ADR 0002](docs/decisions/0002-weather-integration-optional.md)) | ✅ |
-| 6 | ML e análises avançadas | — |
+| 6 | ML e análises avançadas (anomalies, clustering, performance drivers) | 🚧 |
 | 7 | Narrativa e diagnóstico gerado por LLM | — |
 | 8 | Polish e portfólio | — |
 

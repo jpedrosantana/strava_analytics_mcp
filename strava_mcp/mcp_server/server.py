@@ -8,6 +8,7 @@ from strava_mcp.config import settings
 from strava_mcp.mcp_server.queries import (
     query_athlete_doctor,
     query_compare_periods,
+    query_find_anomalies,
     query_find_personal_records,
     query_get_activity,
     query_get_aerobic_efficiency_trend,
@@ -277,6 +278,30 @@ def predict_race_time(
     target_m = target_distance_km * 1000.0
     with _conn() as conn:
         return query_predict_race_time(conn, target_m, source_activity_id)
+
+
+# ---------------------------------------------------------------------------
+# 5.6 Anomalies
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def find_anomalies(
+    days_back: int = 90,
+    z_threshold: float = 2.0,
+) -> dict[str, Any]:
+    """Detecta corridas com pace anômalo em relação ao histórico.
+
+    Treina uma regressão linear sobre as corridas dos últimos 365 dias
+    (features: log da distância, FC média, % de inclinação) e identifica,
+    nos últimos `days_back` dias, atividades cuja velocidade real desvia em
+    pelo menos `z_threshold` desvios-padrão da previsão.
+
+    Retorna outliers ordenados por |z-score| com possíveis causas (TSB
+    negativo, calor, longão) heuristicamente inferidas.
+    """
+    with _conn() as conn:
+        return query_find_anomalies(conn, days_back=days_back, z_threshold=z_threshold)
 
 
 # ---------------------------------------------------------------------------
