@@ -1,4 +1,5 @@
 """Shared fixtures for MCP server query tests."""
+
 import sqlite3
 from pathlib import Path
 

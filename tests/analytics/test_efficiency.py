@@ -1,4 +1,3 @@
-
 from strava_mcp.analytics.efficiency import aerobic_efficiency, decoupling_from_stream
 
 

@@ -329,9 +329,7 @@ class MetricsRepository:
         )
 
     @staticmethod
-    def get_activity_metrics(
-        conn: sqlite3.Connection, activity_id: int
-    ) -> dict[str, Any] | None:
+    def get_activity_metrics(conn: sqlite3.Connection, activity_id: int) -> dict[str, Any] | None:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
             "SELECT * FROM activity_metrics WHERE activity_id = ?", (activity_id,)

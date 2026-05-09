@@ -1,9 +1,12 @@
 """Read-only query helpers for MCP tools. All functions take a sqlite3.Connection."""
+
 import sqlite3
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from strava_mcp.analytics.anomalies import detect_outliers, fit_pace_model
+from strava_mcp.analytics.injury_risk import assess_injury_risk
 from strava_mcp.analytics.predictions import predict_race_time as _predict_race_time
 
 # ---------------------------------------------------------------------------
@@ -162,9 +165,7 @@ def _period_stats_raw(
     sport_type: str | None = None,
 ) -> dict[str, Any]:
     sport_clause = "AND sport_type = ?" if sport_type else ""
-    params: tuple = (
-        (start_date, end_date, sport_type) if sport_type else (start_date, end_date)
-    )
+    params: tuple = (start_date, end_date, sport_type) if sport_type else (start_date, end_date)
     row = _one(
         conn,
         f"""
@@ -211,9 +212,7 @@ def query_get_period_stats(
     raw = _period_stats_raw(conn, start_date, end_date, sport_type)
     dist_m = raw.get("total_distance_m") or 0
     time_s = raw.get("total_moving_time_s") or 0
-    total_z = sum(
-        raw.get(f"z{i}_seconds") or 0 for i in range(1, 6)
-    )
+    total_z = sum(raw.get(f"z{i}_seconds") or 0 for i in range(1, 6))
     zone_pct = {}
     if total_z > 0:
         for i in range(1, 6):
@@ -358,9 +357,7 @@ def query_get_current_form(conn: sqlite3.Connection) -> dict[str, Any] | None:
     }
 
 
-def query_get_load_history(
-    conn: sqlite3.Connection, days_back: int = 90
-) -> list[dict[str, Any]]:
+def query_get_load_history(conn: sqlite3.Connection, days_back: int = 90) -> list[dict[str, Any]]:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
     return _rows(
         conn,
@@ -373,6 +370,29 @@ def query_get_load_history(
         """,
         (cutoff,),
     )
+
+
+def _ef_window_median(conn: sqlite3.Connection, start_iso: str, end_iso: str) -> float | None:
+    """Median EF for Run activities started in [start_iso, end_iso)."""
+    rows = _rows(
+        conn,
+        """
+        SELECT m.aerobic_efficiency AS ef
+        FROM activity_metrics m
+        JOIN activities a ON a.id = m.activity_id
+        WHERE a.sport_type IN ('Run', 'TrailRun')
+          AND a.start_date_local >= ?
+          AND a.start_date_local <  ?
+          AND m.aerobic_efficiency IS NOT NULL
+        """,
+        (start_iso, end_iso),
+    )
+    values = sorted(r["ef"] for r in rows if r.get("ef"))
+    if not values:
+        return None
+    n = len(values)
+    mid = n // 2
+    return values[mid] if n % 2 else (values[mid - 1] + values[mid]) / 2
 
 
 def query_get_injury_risk(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -415,41 +435,28 @@ def query_get_injury_risk(conn: sqlite3.Connection) -> dict[str, Any]:
     avg_vol = (prev4_row or {}).get("avg_vol") or 0.0
     volume_spike = round(cur_vol / avg_vol, 2) if avg_vol > 0 else None
 
-    # Risk factors
-    factors: list[dict[str, Any]] = []
-    risk_score = 0
+    # EF degradation: median EF of last 4 weeks vs prior 8 weeks (baseline).
+    # Skipping today: a single bad run shouldn't dominate the recent window.
+    recent_start = (today - timedelta(weeks=4)).isoformat()
+    baseline_start = (today - timedelta(weeks=12)).isoformat()
+    recent_ef = _ef_window_median(conn, recent_start, today.isoformat())
+    baseline_ef = _ef_window_median(conn, baseline_start, recent_start)
 
-    if acwr is not None:
-        if acwr > 1.5:
-            risk_score += 40
-            factors.append({"factor": "acwr", "value": acwr, "severity": "high",
-                            "note": f"ACWR {acwr} > 1.5 indicates high injury risk"})
-        elif acwr > 1.3:
-            risk_score += 20
-            factors.append({"factor": "acwr", "value": acwr, "severity": "moderate",
-                            "note": f"ACWR {acwr} approaching danger zone (>1.5)"})
-
-    if volume_spike is not None:
-        if volume_spike > 1.5:
-            risk_score += 30
-            factors.append({"factor": "volume_spike", "value": volume_spike, "severity": "high",
-                            "note": f"Week volume is {volume_spike:.1f}x the 4-week average"})
-        elif volume_spike > 1.25:
-            risk_score += 15
-            factors.append({"factor": "volume_spike", "value": volume_spike, "severity": "moderate",
-                            "note": f"Moderate volume spike ({volume_spike:.1f}x average)"})
-
-    risk_score = min(risk_score, 100)
-    risk_level = "low" if risk_score < 20 else ("moderate" if risk_score < 50 else "high")
+    assessment = assess_injury_risk(
+        acwr=acwr,
+        volume_spike=volume_spike,
+        recent_ef=recent_ef,
+        baseline_ef=baseline_ef,
+    )
 
     return {
-        "risk_score": risk_score,
-        "risk_level": risk_level,
+        **assessment,
         "acwr": acwr,
         "volume_spike_ratio": volume_spike,
         "current_week_km": round(cur_vol / 1000, 1),
         "avg_prev4_weeks_km": round(avg_vol / 1000, 1),
-        "factors": factors,
+        "recent_ef_median": round(recent_ef, 5) if recent_ef else None,
+        "baseline_ef_median": round(baseline_ef, 5) if baseline_ef else None,
         "sweet_zone_acwr": "0.8 – 1.3",
     }
 
@@ -531,7 +538,8 @@ def query_get_decoupling_trend(
             "duration_min": round((r["moving_time_s"] or 0) / 60, 1),
             "decoupling_pct": round(r["decoupling_pct"] or 0, 2),
             "grade": (
-                "excellent" if r["decoupling_pct"] < 5
+                "excellent"
+                if r["decoupling_pct"] < 5
                 else ("adequate" if r["decoupling_pct"] < 10 else "needs_work")
             ),
         }
@@ -608,9 +616,7 @@ _PR_LOWER_TOL = 0.98  # min distance = target * 0.98
 _PR_UPPER_TOL = 1.05  # max distance = target * 1.05
 
 
-def _best_effort_for_distance(
-    conn: sqlite3.Connection, target_m: float
-) -> dict[str, Any] | None:
+def _best_effort_for_distance(conn: sqlite3.Connection, target_m: float) -> dict[str, Any] | None:
     """Fastest run within the tolerance band around target_m."""
     lo = target_m * _PR_LOWER_TOL
     hi = target_m * _PR_UPPER_TOL
@@ -680,9 +686,7 @@ def _time_str(seconds: float | None) -> str | None:
     return f"{m}:{sec:02d}"
 
 
-def _closest_pr_to(
-    prs: list[dict[str, Any]], target_distance_m: float
-) -> dict[str, Any] | None:
+def _closest_pr_to(prs: list[dict[str, Any]], target_distance_m: float) -> dict[str, Any] | None:
     """Pick the PR whose distance is closest to target — preferring the
     largest race distance not exceeding the target if tied."""
     valid = [p for p in prs if p.get("status") == "ok"]
@@ -776,4 +780,79 @@ def query_predict_race_time(
             "Riegel tends to be optimistic for distances much longer than the source race; "
             "VDOT is generally more conservative for marathon projections from half-marathon data."
         ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# 5.6 Anomalies
+# ---------------------------------------------------------------------------
+
+
+def query_find_anomalies(
+    conn: sqlite3.Connection,
+    days_back: int = 90,
+    z_threshold: float = 2.0,
+    train_window_days: int = 365,
+) -> dict[str, Any]:
+    """Detect pace anomalies in recent runs against a learned baseline.
+
+    Trains a regression on runs from the last `train_window_days`, then flags
+    activities in the last `days_back` whose actual speed deviates by at least
+    `z_threshold` standard deviations from the prediction.
+    """
+    today = date.today()
+    train_start = (today - timedelta(days=train_window_days)).isoformat()
+    eval_start = (today - timedelta(days=days_back)).isoformat()
+
+    train_rows = _rows(
+        conn,
+        """
+        SELECT id, name, sport_type, start_date_local,
+               distance_m, moving_time_s, average_speed_mps,
+               average_heartrate, elevation_gain_m
+        FROM activities
+        WHERE sport_type IN ('Run', 'TrailRun')
+          AND start_date_local >= ?
+          AND distance_m > 1000
+          AND average_heartrate IS NOT NULL
+          AND average_speed_mps IS NOT NULL
+        """,
+        (train_start,),
+    )
+
+    model = fit_pace_model(train_rows)
+    if model is None:
+        return {
+            "error": "insufficient_data",
+            "hint": (
+                f"Need at least 20 runs with HR data in the last "
+                f"{train_window_days} days to fit the model."
+            ),
+            "n_samples": len(train_rows),
+        }
+
+    # TSB lookup for cause hints
+    tsb_rows = _rows(
+        conn,
+        "SELECT date, tsb FROM daily_metrics WHERE date >= ?",
+        (eval_start,),
+    )
+    tsb_by_date = {str(r["date"]): r["tsb"] for r in tsb_rows if r.get("tsb") is not None}
+
+    eval_rows = [r for r in train_rows if r["start_date_local"] >= eval_start]
+    outliers = detect_outliers(eval_rows, model, z_threshold=z_threshold, tsb_by_date=tsb_by_date)
+
+    return {
+        "model": {
+            "n_samples": model["n_samples"],
+            "residual_std_mps": round(model["residual_std"], 3),
+            "feature_names": list(model["feature_names"]),
+        },
+        "evaluation": {
+            "days_back": days_back,
+            "z_threshold": z_threshold,
+            "n_evaluated": len(eval_rows),
+            "n_outliers": len(outliers),
+        },
+        "outliers": outliers,
     }

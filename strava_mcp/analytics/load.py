@@ -60,7 +60,7 @@ def hr_tss(
 # ---------------------------------------------------------------------------
 
 _CTL_TC = 42  # days
-_ATL_TC = 7   # days
+_ATL_TC = 7  # days
 
 
 def _exp_decay(tc: int) -> float:

@@ -1,4 +1,3 @@
-
 from strava_mcp.analytics.ngp import (
     grade_factor,
     intensity_factor,

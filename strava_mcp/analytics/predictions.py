@@ -1,4 +1,5 @@
 """Race time prediction models: Riegel and VDOT (Daniels)."""
+
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -49,11 +50,7 @@ def _vo2_demand(velocity_m_per_min: float) -> float:
 def _intensity_fraction(duration_min: float) -> float:
     """Fraction of VO2max sustainable for a given race duration (min)."""
     t = duration_min
-    return (
-        0.8
-        + 0.1894393 * pow(2.71828, -0.012778 * t)
-        + 0.2989558 * pow(2.71828, -0.1932605 * t)
-    )
+    return 0.8 + 0.1894393 * pow(2.71828, -0.012778 * t) + 0.2989558 * pow(2.71828, -0.1932605 * t)
 
 
 def vdot_from_race(distance_m: float, time_s: float) -> float | None:
