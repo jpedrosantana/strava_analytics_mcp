@@ -90,6 +90,8 @@ Exemplos de perguntas:
 | `get_injury_risk_assessment` | Score de risco de lesão baseado em ACWR e picos de volume |
 | `get_aerobic_efficiency_trend` | Tendência mensal de EF em corridas |
 | `get_decoupling_trend` | Decoupling cardíaco em corridas longas (≥60min) |
+| `find_personal_records` | Melhores tempos em distâncias-padrão (5K, 10K, 21K, maratona...) |
+| `predict_race_time` | Projeção de tempo via Riegel + VDOT em qualquer distância |
 | `sync_now` | Dispara sync incremental (ou full) via tool |
 | `athlete_doctor` | Diagnóstico de completude e qualidade dos dados |
 
@@ -108,6 +110,10 @@ INSERT OR REPLACE INTO athlete_config VALUES ('sex',     'male', datetime('now')
 
 Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico de corridas.
 
+## Documentação
+
+- [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
+
 ## Roadmap
 
 | Fase | Descrição | Status |
@@ -117,7 +123,7 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 2 | Banco SQLite + sync (backfill, incremental, streams) | ✅ |
 | 3 | Analytics core (TRIMP, CTL/ATL/TSB, zonas, NGP, EF) | ✅ |
 | 4 | MCP server v0.1 — 13 tools, usável no Claude | ✅ |
-| 5 | Predições (Riegel, VDOT) + clima (Open-Meteo) | 🔜 |
+| 5 | Predições (Riegel, VDOT); clima opcional ([ADR 0002](docs/decisions/0002-weather-integration-optional.md)) | ✅ |
 | 6 | ML e análises avançadas | — |
 | 7 | Narrativa e diagnóstico gerado por LLM | — |
 | 8 | Polish e portfólio | — |

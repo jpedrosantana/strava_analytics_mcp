@@ -8,6 +8,7 @@ from strava_mcp.config import settings
 from strava_mcp.mcp_server.queries import (
     query_athlete_doctor,
     query_compare_periods,
+    query_find_personal_records,
     query_get_activity,
     query_get_aerobic_efficiency_trend,
     query_get_current_form,
@@ -17,6 +18,7 @@ from strava_mcp.mcp_server.queries import (
     query_get_period_stats,
     query_get_weekly_breakdown,
     query_list_activities,
+    query_predict_race_time,
     query_search_activities,
 )
 
@@ -237,6 +239,44 @@ def get_decoupling_trend(months_back: int = 6) -> list[dict[str, Any]]:
     """
     with _conn() as conn:
         return query_get_decoupling_trend(conn, months_back)
+
+
+# ---------------------------------------------------------------------------
+# 5.5 Predictions
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def find_personal_records() -> list[dict[str, Any]]:
+    """Melhores tempos do atleta em distâncias-padrão de corrida.
+
+    Retorna PRs em 5K, 10K, 15K, Meia (21.0975K), 25K, 30K e Maratona.
+    Para cada distância, considera corridas dentro da janela [target × 0.98,
+    target × 1.05] e seleciona a com menor moving_time. Distâncias sem
+    registro retornam status "no_record".
+    """
+    with _conn() as conn:
+        return query_find_personal_records(conn)
+
+
+@mcp.tool()
+def predict_race_time(
+    target_distance_km: float,
+    source_activity_id: int | None = None,
+) -> dict[str, Any]:
+    """Projeta tempo de prova em uma distância arbitrária via Riegel e VDOT.
+
+    target_distance_km: distância da prova-alvo (ex.: 42.195 para maratona).
+    source_activity_id: opcional. Se fornecido, usa essa atividade como base.
+                        Caso contrário, escolhe automaticamente o PR mais
+                        próximo da distância-alvo.
+
+    Retorna projeções de Riegel (clássica) e VDOT (Daniels), com pace e tempo
+    formatado, além da atividade-fonte usada.
+    """
+    target_m = target_distance_km * 1000.0
+    with _conn() as conn:
+        return query_predict_race_time(conn, target_m, source_activity_id)
 
 
 # ---------------------------------------------------------------------------
