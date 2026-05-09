@@ -40,6 +40,18 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** o modelo de drivers passa a refletir o impacto real da temperatura no pace.
 
+### Inferência de cidade em `get_route_clusters`
+
+**Problema:** os clusters retornam apenas `centroid_lat` / `centroid_lng`. Não há tradução automática para nome de cidade — para descobrir que (-22,99, -43,22) é Rio de Janeiro, o usuário/LLM precisa cruzar com o nome da atividade ou ter conhecimento prévio de coordenadas.
+
+**Exemplo real:** corridas em Rio de Janeiro (jun/2025), Igaratá (set/2025) e Brasília (nov/2025) não aparecem como clusters porque cada cidade tem só 1–2 atividades, abaixo do `min_samples=3` do DBSCAN. Mesmo se aparecessem, precisaríamos olhar para a lat/lng e adivinhar a cidade.
+
+**Soluções possíveis (a decidir quando priorizar):**
+- **Bounding box local**: lookup hardcoded de cidades-chave (SP, Rio, Brasília, etc.) com seus bbox. Rápido, zero dependências, mas restrito ao que está cadastrado.
+- **Reverse geocoding via Nominatim/OSM**: cobertura mundial, gratuito mas com rate limit (1 req/s) e latência. Bom candidato para cache local por (lat, lng) arredondado.
+
+**Impacto:** clusters passam a ter um `city` ou `location_label` legível, e atividades em viagens (mesmo isoladas) podem ser agrupadas por cidade em vez de descartadas como ruído do DBSCAN.
+
 ---
 
 ## Sincronização
