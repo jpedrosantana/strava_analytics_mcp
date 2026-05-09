@@ -40,6 +40,19 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** o modelo de drivers passa a refletir o impacto real da temperatura no pace.
 
+### Detecção/correção de atividades com GPS corrompido
+
+**Problema:** atividades com erro de GPS (túneis, perda de sinal, drift em prédios altos) inflam `distance_m` e, por consequência, deflacionam o pace calculado como `distance/time`. Isso contamina toda a stack analítica: `total_distance_km` de períodos, `longest`/`fastest_run` em highlights, baseline de PRs, EF, predict_race_time e qualquer comparação histórica.
+
+**Exemplo real:** meia maratona em 12/04/2026 registrou 23 km no Strava (kms 17–19 com pace zoado por túnel). A atividade aparece como `longest` + `fastest_run` + `highest_load` no `generate_period_narrative` das últimas 4 semanas, com pace de 5:09/km — que está artificialmente otimista, já que a distância real foi ~21,1 km.
+
+**Soluções possíveis (a decidir quando priorizar):**
+- **Flag manual**: campo `data_quality` em `activities` (ex: `gps_corrupt`, `race_official_distance`) que o usuário marca em atividades específicas. Analytics filtram ou ajustam baseado no flag.
+- **Detector automático**: heurísticas sobre os streams — variação anômala entre splits adjacentes, gap suspeito entre `moving_time` e `elapsed_time`, jump de altitude/lat-lng. Marcar `data_quality` automaticamente.
+- **Distância oficial em provas**: quando atividade tem `workout_type=race` (ou tag manual), permitir sobrescrita da distância pelo valor oficial (5K, 10K, 21,0975, 42,195). Pace é recalculado.
+
+**Impacto:** highlights, PRs e médias de período deixam de ser contaminados por dados ruins. Particularmente importante para provas, onde o erro tende a vir junto com a sessão de maior carga e maior intensidade do período.
+
 ### Inferência de cidade em `get_route_clusters`
 
 **Problema:** os clusters retornam apenas `centroid_lat` / `centroid_lng`. Não há tradução automática para nome de cidade — para descobrir que (-22,99, -43,22) é Rio de Janeiro, o usuário/LLM precisa cruzar com o nome da atividade ou ter conhecimento prévio de coordenadas.

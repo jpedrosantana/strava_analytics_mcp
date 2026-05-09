@@ -9,8 +9,10 @@ from strava_mcp.config import settings
 from strava_mcp.mcp_server.queries import (
     query_athlete_doctor,
     query_compare_periods,
+    query_diagnose_plateau,
     query_find_anomalies,
     query_find_personal_records,
+    query_generate_period_narrative,
     query_get_activity,
     query_get_aerobic_efficiency_trend,
     query_get_current_form,
@@ -334,6 +336,41 @@ def what_drives_my_performance(days_back: int = 90) -> dict[str, Any]:
     """
     with _conn() as conn:
         return query_what_drives_my_performance(conn, days_back)
+
+
+# ---------------------------------------------------------------------------
+# 5.7 Narrative and diagnosis
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def generate_period_narrative(start_date: str, end_date: str) -> dict[str, Any]:
+    """Resumo estruturado de um período de treino para narração pelo LLM.
+
+    Retorna: estatísticas agregadas, comparação com o período imediatamente
+    anterior (mesmo span), highlights (longão, corrida mais rápida, sessão de
+    maior carga), evolução de forma (CTL/TSB inicial vs final) e lista de
+    "concerns" (anomalias detectadas, dias com ACWR alto, ausência de longão).
+
+    O retorno é apenas dados — cabe ao LLM consumir e narrar como coach.
+    Datas no formato YYYY-MM-DD.
+    """
+    with _conn() as conn:
+        return query_generate_period_narrative(conn, start_date, end_date)
+
+
+@mcp.tool()
+def diagnose_plateau(weeks_back: int = 12) -> dict[str, Any]:
+    """Diagnostica platô combinando 4 indicadores nas últimas `weeks_back` semanas.
+
+    Indicadores: tendência mensal de EF, tendência semanal de pace em FC de
+    limiar, tempo desde o último PR e variedade de intensidade (% Z4-Z5).
+
+    Retorna is_plateauing (bool), evidências, possíveis causas e sugestões
+    concretas (ex: 'adicionar 1 sessão semanal de intervalado').
+    """
+    with _conn() as conn:
+        return query_diagnose_plateau(conn, weeks_back=weeks_back)
 
 
 # ---------------------------------------------------------------------------

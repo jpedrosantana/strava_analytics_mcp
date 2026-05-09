@@ -91,6 +91,8 @@ Exemplos de perguntas:
 | `find_anomalies` | Detecta corridas com pace fora do esperado via regressão sobre o histórico |
 | `get_route_clusters` | Agrupa corridas por ponto de partida recorrente (DBSCAN) e faixa de distância |
 | `what_drives_my_performance` | Ranqueia features que mais influenciam pace via Gradient Boosting |
+| `generate_period_narrative` | Resumo estruturado de um período (highlights, comparações, concerns) para narração pelo LLM |
+| `diagnose_plateau` | Diagnóstico de platô com 4 indicadores e sugestões concretas |
 | `get_aerobic_efficiency_trend` | Tendência mensal de EF em corridas |
 | `get_decoupling_trend` | Decoupling cardíaco em corridas longas (≥60min) |
 | `find_personal_records` | Melhores tempos em distâncias-padrão (5K, 10K, 21K, maratona...) |
@@ -116,6 +118,7 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 ## Documentação
 
 - [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
+- [Exemplos de System Prompts para Modo Coach](docs/COACH_PROMPTS.md) — templates para usar o MCP como treinador pessoal
 
 ## Roadmap
 
@@ -128,7 +131,7 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 4 | MCP server v0.1 — 13 tools, usável no Claude | ✅ |
 | 5 | Predições (Riegel, VDOT); clima opcional ([ADR 0002](docs/decisions/0002-weather-integration-optional.md)) | ✅ |
 | 6 | ML e análises avançadas (anomalies, clustering, performance drivers) | ✅ |
-| 7 | Narrativa e diagnóstico gerado por LLM | — |
+| 7 | Narrativa e diagnóstico (period narrative, plateau diagnosis, coach prompts) | ✅ |
 | 8 | Polish e portfólio | — |
 
 ## Stack
