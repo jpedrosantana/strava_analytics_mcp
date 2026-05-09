@@ -682,9 +682,9 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 - [ ] Reescrever os critérios da Fase 9 de forma mensurável no próprio SPEC (badges, ≥3 screenshots, link de post publicado, etc.)
 
 **Verificação (auditoria do código atual; corrigir e anotar no commit se houver gap):**
-- [ ] CTL/ATL/TSB tratam dias sem atividade como TSS=0? Se não, decay quebra em períodos de descanso/lesão
-- [ ] Existe cache persistente para Open-Meteo? Backfill de 2 anos sem cache esgota rate limit
-- [ ] Há sanitização atual de FC spikes ou GPS jumps no `compute-metrics`?
+- [x] CTL/ATL/TSB tratam dias sem atividade como TSS=0? **OK** — `analytics/load.py:build_daily_load` reindexa pd.date_range contínuo e `fillna(0.0)`; `sync/compute_metrics.py:197-200` constrói série contínua entre primeira e última atividade
+- [x] Existe cache persistente para Open-Meteo? **N/A** — integração não implementada (ADR 0002 posterga a feature); cache só é relevante quando o backfill climático existir
+- [x] Há sanitização atual de FC spikes ou GPS jumps no `compute-metrics`? **GAP** — único defensivo é `np.clip(grade, -0.45, 0.45)` em NGP e drop de HR=0 em EF; correção completa absorvida pelo item "Data Quality Layer" do backlog
 
 **Expansão do backlog (registrar em `docs/BACKLOG.md`, sem implementar):**
 - [ ] **Data Quality Layer** — expandir o item de GPS corrompido para englobar HR spikes, gaps de stream, pace impossível, mismatch moving vs elapsed time
