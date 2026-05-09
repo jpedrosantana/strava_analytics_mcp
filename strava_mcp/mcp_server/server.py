@@ -1,4 +1,5 @@
 """Strava Analytics MCP server — exposes sports science tools to LLMs."""
+
 import sqlite3
 from typing import Any
 

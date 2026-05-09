@@ -4,6 +4,7 @@ The model predicts expected speed (m/s) from distance, heart rate and
 elevation gain. Activities whose actual speed deviates significantly from the
 prediction are flagged as outliers.
 """
+
 from typing import Any
 
 import numpy as np
@@ -131,7 +132,7 @@ def detect_outliers(
             continue
 
         date_key = str(a.get("start_date_local", ""))[:10]
-        avg_temp = (a.get("raw_json_temp") or None)
+        avg_temp = a.get("raw_json_temp") or None
         causes = _possible_causes(
             activity=a,
             z_score=z,

@@ -1,4 +1,5 @@
 """Full analytics compute pipeline: activity_metrics + daily_metrics."""
+
 import sqlite3
 from collections import defaultdict
 from collections.abc import Callable
@@ -78,11 +79,7 @@ def compute_activity_metrics(
         if (avg_hr and hr_max and moving_time)
         else None
     )
-    hr_tss_val = (
-        hr_tss(moving_time, avg_hr, lthr)
-        if (avg_hr and lthr and moving_time)
-        else None
-    )
+    hr_tss_val = hr_tss(moving_time, avg_hr, lthr) if (avg_hr and lthr and moving_time) else None
 
     ngp_metrics = activity_ngp_metrics(activity, threshold_pace_mps)
     eff_metrics = activity_efficiency_metrics(
@@ -158,10 +155,7 @@ def compute_all_metrics(
         activity_ids_with_streams = StreamRepository.get_activity_ids_with_streams(conn)
         for idx, activity in enumerate(activities):
             distance_stream = altitude_stream = time_stream = hr_stream = None
-            if (
-                activity.get("sport_type") == "Run"
-                and activity["id"] in activity_ids_with_streams
-            ):
+            if activity.get("sport_type") == "Run" and activity["id"] in activity_ids_with_streams:
                 distance_stream = StreamRepository.get(conn, activity["id"], "distance")
                 altitude_stream = StreamRepository.get(conn, activity["id"], "altitude")
                 time_stream = StreamRepository.get(conn, activity["id"], "time")
@@ -201,8 +195,7 @@ def compute_all_metrics(
         return {"activities": total, "daily_rows": 0}
 
     date_range = [
-        all_dates[0] + timedelta(days=i)
-        for i in range((all_dates[-1] - all_dates[0]).days + 1)
+        all_dates[0] + timedelta(days=i) for i in range((all_dates[-1] - all_dates[0]).days + 1)
     ]
     daily_tss_seq = [daily_tss_by_date.get(d, 0.0) for d in date_range]
 

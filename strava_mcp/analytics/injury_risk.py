@@ -5,6 +5,7 @@ Three signals are combined into a 0-100 risk score:
   - Volume spike — current week distance vs. 4-week average
   - EF degradation — drop in aerobic efficiency vs. baseline (overreaching marker)
 """
+
 from typing import Any
 
 # ---------------------------------------------------------------------------

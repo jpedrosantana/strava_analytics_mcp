@@ -1,4 +1,5 @@
 """Read-only query helpers for MCP tools. All functions take a sqlite3.Connection."""
+
 import sqlite3
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
@@ -164,9 +165,7 @@ def _period_stats_raw(
     sport_type: str | None = None,
 ) -> dict[str, Any]:
     sport_clause = "AND sport_type = ?" if sport_type else ""
-    params: tuple = (
-        (start_date, end_date, sport_type) if sport_type else (start_date, end_date)
-    )
+    params: tuple = (start_date, end_date, sport_type) if sport_type else (start_date, end_date)
     row = _one(
         conn,
         f"""
@@ -213,9 +212,7 @@ def query_get_period_stats(
     raw = _period_stats_raw(conn, start_date, end_date, sport_type)
     dist_m = raw.get("total_distance_m") or 0
     time_s = raw.get("total_moving_time_s") or 0
-    total_z = sum(
-        raw.get(f"z{i}_seconds") or 0 for i in range(1, 6)
-    )
+    total_z = sum(raw.get(f"z{i}_seconds") or 0 for i in range(1, 6))
     zone_pct = {}
     if total_z > 0:
         for i in range(1, 6):
@@ -360,9 +357,7 @@ def query_get_current_form(conn: sqlite3.Connection) -> dict[str, Any] | None:
     }
 
 
-def query_get_load_history(
-    conn: sqlite3.Connection, days_back: int = 90
-) -> list[dict[str, Any]]:
+def query_get_load_history(conn: sqlite3.Connection, days_back: int = 90) -> list[dict[str, Any]]:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
     return _rows(
         conn,
@@ -377,9 +372,7 @@ def query_get_load_history(
     )
 
 
-def _ef_window_median(
-    conn: sqlite3.Connection, start_iso: str, end_iso: str
-) -> float | None:
+def _ef_window_median(conn: sqlite3.Connection, start_iso: str, end_iso: str) -> float | None:
     """Median EF for Run activities started in [start_iso, end_iso)."""
     rows = _rows(
         conn,
@@ -545,7 +538,8 @@ def query_get_decoupling_trend(
             "duration_min": round((r["moving_time_s"] or 0) / 60, 1),
             "decoupling_pct": round(r["decoupling_pct"] or 0, 2),
             "grade": (
-                "excellent" if r["decoupling_pct"] < 5
+                "excellent"
+                if r["decoupling_pct"] < 5
                 else ("adequate" if r["decoupling_pct"] < 10 else "needs_work")
             ),
         }
@@ -622,9 +616,7 @@ _PR_LOWER_TOL = 0.98  # min distance = target * 0.98
 _PR_UPPER_TOL = 1.05  # max distance = target * 1.05
 
 
-def _best_effort_for_distance(
-    conn: sqlite3.Connection, target_m: float
-) -> dict[str, Any] | None:
+def _best_effort_for_distance(conn: sqlite3.Connection, target_m: float) -> dict[str, Any] | None:
     """Fastest run within the tolerance band around target_m."""
     lo = target_m * _PR_LOWER_TOL
     hi = target_m * _PR_UPPER_TOL
@@ -694,9 +686,7 @@ def _time_str(seconds: float | None) -> str | None:
     return f"{m}:{sec:02d}"
 
 
-def _closest_pr_to(
-    prs: list[dict[str, Any]], target_distance_m: float
-) -> dict[str, Any] | None:
+def _closest_pr_to(prs: list[dict[str, Any]], target_distance_m: float) -> dict[str, Any] | None:
     """Pick the PR whose distance is closest to target — preferring the
     largest race distance not exceeding the target if tied."""
     valid = [p for p in prs if p.get("status") == "ok"]
@@ -850,9 +840,7 @@ def query_find_anomalies(
     tsb_by_date = {str(r["date"]): r["tsb"] for r in tsb_rows if r.get("tsb") is not None}
 
     eval_rows = [r for r in train_rows if r["start_date_local"] >= eval_start]
-    outliers = detect_outliers(
-        eval_rows, model, z_threshold=z_threshold, tsb_by_date=tsb_by_date
-    )
+    outliers = detect_outliers(eval_rows, model, z_threshold=z_threshold, tsb_by_date=tsb_by_date)
 
     return {
         "model": {

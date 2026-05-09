@@ -109,16 +109,16 @@ class TestComparePeriods:
     def test_returns_deltas(self, conn: sqlite3.Connection) -> None:
         result = query_compare_periods(
             conn,
-            "2000-01-01", "2099-06-30",
-            "2000-01-01", "2099-12-31",
+            "2000-01-01",
+            "2099-06-30",
+            "2000-01-01",
+            "2099-12-31",
         )
         assert "n_activities" in result
         assert "delta" in result["n_activities"]
 
     def test_period_info_included(self, conn: sqlite3.Connection) -> None:
-        result = query_compare_periods(
-            conn, "2024-01-01", "2024-06-30", "2024-07-01", "2024-12-31"
-        )
+        result = query_compare_periods(conn, "2024-01-01", "2024-06-30", "2024-07-01", "2024-12-31")
         assert "period_a" in result
         assert "period_b" in result
 
@@ -154,7 +154,11 @@ class TestGetCurrentForm:
         assert result is not None
         assert "form_status" in result
         assert result["form_status"] in (
-            "very_rested", "race_ready", "productive", "loaded", "high_risk"
+            "very_rested",
+            "race_ready",
+            "productive",
+            "loaded",
+            "high_risk",
         )
 
 

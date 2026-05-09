@@ -67,6 +67,7 @@ class TestHrTss:
 class TestComputeCtlAtlTsb:
     def _make_dates(self, n: int) -> list[date]:
         from datetime import timedelta
+
         start = date(2024, 1, 1)
         return [start + timedelta(days=i) for i in range(n)]
 

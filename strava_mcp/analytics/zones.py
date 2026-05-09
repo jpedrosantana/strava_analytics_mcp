@@ -47,14 +47,8 @@ def estimate_lthr(runs_df: pd.DataFrame, today: date | None = None) -> float | N
         today = date.today()
     cutoff = today - timedelta(days=90)
 
-    mask_base = (
-        runs_df["average_heartrate"].notna()
-        & (runs_df["moving_time_s"] > 1200)
-    )
-    recent = runs_df[
-        mask_base
-        & (pd.to_datetime(runs_df["start_date_utc"]).dt.date >= cutoff)
-    ]
+    mask_base = runs_df["average_heartrate"].notna() & (runs_df["moving_time_s"] > 1200)
+    recent = runs_df[mask_base & (pd.to_datetime(runs_df["start_date_utc"]).dt.date >= cutoff)]
     subset = recent if len(recent) >= 5 else runs_df[mask_base]
 
     if len(subset) < 5:
@@ -65,8 +59,7 @@ def estimate_lthr(runs_df: pd.DataFrame, today: date | None = None) -> float | N
 def zone_thresholds(lthr: float) -> list[dict[str, Any]]:
     """Returns zone thresholds in bpm given LTHR."""
     return [
-        {"zone": name, "min_bpm": lthr * lo, "max_bpm": lthr * hi}
-        for name, lo, hi in _FRIEL_ZONES
+        {"zone": name, "min_bpm": lthr * lo, "max_bpm": lthr * hi} for name, lo, hi in _FRIEL_ZONES
     ]
 
 

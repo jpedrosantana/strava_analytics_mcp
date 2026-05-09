@@ -103,7 +103,5 @@ class TestAssessInjuryRisk:
 
     def test_score_never_exceeds_100(self) -> None:
         # Construct an extreme case
-        result = assess_injury_risk(
-            acwr=2.0, volume_spike=3.0, recent_ef=0.01, baseline_ef=0.02
-        )
+        result = assess_injury_risk(acwr=2.0, volume_spike=3.0, recent_ef=0.01, baseline_ef=0.02)
         assert result["risk_score"] <= 100
