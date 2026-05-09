@@ -12,6 +12,10 @@ Critérios de aceitação por fase estão no SPEC — atendê-los é obrigatóri
 Decisões não cobertas: registrar em `docs/decisions/NNNN-titulo.md`
 no formato ADR.
 
+Melhorias futuras identificadas mas não priorizadas: registrar em
+`docs/BACKLOG.md`. Antes de iniciar qualquer item dali, confirmar com
+o usuário e mover para o roadmap principal ou criar ADR específico.
+
 ## Perfil do atleta
 
 Parâmetros estimados pelo histórico de corridas (não de teste laboratorial):
