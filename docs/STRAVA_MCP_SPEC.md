@@ -677,9 +677,9 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 **Contexto:** após a Fase 7, o projeto passou por revisões externas que convergiram em pontos relacionados a qualidade da série temporal, clareza arquitetural e mensurabilidade dos critérios de polish. Esta fase consolida implementação, verificação e expansão do backlog em uma única passagem antes da Fase 9.
 
 **Implementação (entregar):**
-- [ ] Diagrama de arquitetura no README (Mermaid: `setup → sync → compute-metrics → serve → Claude`)
-- [ ] `docs/TROUBLESHOOTING.md` com cenários: OAuth expirado, 429 da Strava API, sync interrompido no meio, gaps de stream, reset do banco
-- [ ] Reescrever os critérios da Fase 9 de forma mensurável no próprio SPEC (badges, ≥3 screenshots, link de post publicado, etc.)
+- [x] Diagrama de arquitetura no README (Mermaid: `setup → sync → compute-metrics → serve → Claude`)
+- [x] `docs/TROUBLESHOOTING.md` com cenários: OAuth expirado, 429 da Strava API, sync interrompido no meio, gaps de stream, reset do banco
+- [x] Reescrever os critérios da Fase 9 de forma mensurável no próprio SPEC (badges, ≥3 screenshots, link de post publicado, etc.)
 
 **Verificação (auditoria do código atual; corrigir e anotar no commit se houver gap):**
 - [x] CTL/ATL/TSB tratam dias sem atividade como TSS=0? **OK** — `analytics/load.py:build_daily_load` reindexa pd.date_range contínuo e `fillna(0.0)`; `sync/compute_metrics.py:197-200` constrói série contínua entre primeira e última atividade
@@ -687,12 +687,12 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 - [x] Há sanitização atual de FC spikes ou GPS jumps no `compute-metrics`? **GAP** — único defensivo é `np.clip(grade, -0.45, 0.45)` em NGP e drop de HR=0 em EF; correção completa absorvida pelo item "Data Quality Layer" do backlog
 
 **Expansão do backlog (registrar em `docs/BACKLOG.md`, sem implementar):**
-- [ ] **Data Quality Layer** — expandir o item de GPS corrompido para englobar HR spikes, gaps de stream, pace impossível, mismatch moving vs elapsed time
-- [ ] `compare_cycles()` — tool comparando ciclo atual com melhor meia anterior
-- [ ] Versões `summary`/`detailed` em `generate_period_narrative` e `what_drives_my_performance`
-- [ ] Schemas MCP padronizados (envelope `{status, data, warnings, confidence}`)
-- [ ] Cross-validation + Spearman para validar `what_drives_my_performance`
-- [ ] Reorganização de `analytics/` em sub-pastas (`features/`, `metrics/`, `models/`, `diagnostics/`)
+- [x] **Data Quality Layer** — expandir o item de GPS corrompido para englobar HR spikes, gaps de stream, pace impossível, mismatch moving vs elapsed time
+- [x] `compare_cycles()` — tool comparando ciclo atual com melhor meia anterior
+- [x] Versões `summary`/`detailed` em `generate_period_narrative` e `what_drives_my_performance`
+- [x] Schemas MCP padronizados (envelope `{status, data, warnings, confidence}`)
+- [x] Cross-validation + Spearman para validar `what_drives_my_performance`
+- [x] Reorganização de `analytics/` em sub-pastas (`features/`, `metrics/`, `models/`, `diagnostics/`)
 
 **Aceitação:** README com diagrama legível; `TROUBLESHOOTING.md` cobrindo ≥4 cenários; checklist da Fase 9 reescrito de forma mensurável; cada item de Verificação fechado (correção implementada com nota no commit, ou commit explicando que não há gap); `BACKLOG.md` expandido com os 6 itens acima.
 

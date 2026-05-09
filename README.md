@@ -160,7 +160,7 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 5 | Predições (Riegel, VDOT); clima opcional ([ADR 0002](docs/decisions/0002-weather-integration-optional.md)) | ✅ |
 | 6 | ML e análises avançadas (anomalies, clustering, performance drivers) | ✅ |
 | 7 | Narrativa e diagnóstico (period narrative, plateau diagnosis, coach prompts) | ✅ |
-| 8 | Ajustes finos pós-review (diagrama, troubleshooting, auditoria, expansão do backlog) | 🚧 |
+| 8 | Ajustes finos pós-review (diagrama, troubleshooting, auditoria, expansão do backlog) | ✅ |
 | 9 | Polish e portfólio | — |
 
 ## Stack
