@@ -4,6 +4,8 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from strava_mcp.analytics.predictions import predict_race_time as _predict_race_time
+
 # ---------------------------------------------------------------------------
 # Formatting helpers
 # ---------------------------------------------------------------------------
@@ -582,4 +584,196 @@ def query_athlete_doctor(conn: sqlite3.Connection, db_path: str) -> dict[str, An
             "activity_metrics_rows": metrics_count,
             "daily_metrics_rows": daily_count,
         },
+    }
+
+
+# ---------------------------------------------------------------------------
+# 5.5 Predictions
+# ---------------------------------------------------------------------------
+
+# Standard race distances and the tolerance band we accept as "this run was
+# basically that distance". Tight upper bound avoids treating a 25K race as a
+# slow half-marathon.
+STANDARD_DISTANCES: list[tuple[str, float]] = [
+    ("5K", 5000.0),
+    ("10K", 10000.0),
+    ("15K", 15000.0),
+    ("Half Marathon", 21097.5),
+    ("25K", 25000.0),
+    ("30K", 30000.0),
+    ("Marathon", 42195.0),
+]
+
+_PR_LOWER_TOL = 0.98  # min distance = target * 0.98
+_PR_UPPER_TOL = 1.05  # max distance = target * 1.05
+
+
+def _best_effort_for_distance(
+    conn: sqlite3.Connection, target_m: float
+) -> dict[str, Any] | None:
+    """Fastest run within the tolerance band around target_m."""
+    lo = target_m * _PR_LOWER_TOL
+    hi = target_m * _PR_UPPER_TOL
+    row = _one(
+        conn,
+        """
+        SELECT id, name, start_date_local, distance_m, moving_time_s,
+               average_speed_mps, average_heartrate
+        FROM activities
+        WHERE sport_type IN ('Run', 'TrailRun')
+          AND distance_m BETWEEN ? AND ?
+          AND moving_time_s > 0
+        ORDER BY moving_time_s ASC
+        LIMIT 1
+        """,
+        (lo, hi),
+    )
+    return row
+
+
+def query_find_personal_records(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Best time at each standard distance, computed from summary data.
+
+    For each distance in STANDARD_DISTANCES, picks the run within
+    [target*0.98, target*1.05] with the fastest moving_time.
+    Distances with no matching run are returned with status="no_record".
+    """
+    results: list[dict[str, Any]] = []
+    for label, dist_m in STANDARD_DISTANCES:
+        best = _best_effort_for_distance(conn, dist_m)
+        if best is None:
+            results.append(
+                {
+                    "distance_label": label,
+                    "distance_m": dist_m,
+                    "status": "no_record",
+                }
+            )
+            continue
+        results.append(
+            {
+                "distance_label": label,
+                "distance_m": dist_m,
+                "status": "ok",
+                "activity_id": best["id"],
+                "name": best["name"],
+                "date": str(best.get("start_date_local", ""))[:10],
+                "actual_distance_m": round(best["distance_m"], 1),
+                "time_s": best["moving_time_s"],
+                "time_str": _time_str(best["moving_time_s"]),
+                "pace": _pace_str(best.get("average_speed_mps")),
+                "avg_hr": best.get("average_heartrate"),
+            }
+        )
+    return results
+
+
+def _time_str(seconds: float | None) -> str | None:
+    """Format seconds as H:MM:SS or MM:SS."""
+    if seconds is None or seconds <= 0:
+        return None
+    s = int(round(seconds))
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    if h > 0:
+        return f"{h}:{m:02d}:{sec:02d}"
+    return f"{m}:{sec:02d}"
+
+
+def _closest_pr_to(
+    prs: list[dict[str, Any]], target_distance_m: float
+) -> dict[str, Any] | None:
+    """Pick the PR whose distance is closest to target — preferring the
+    largest race distance not exceeding the target if tied."""
+    valid = [p for p in prs if p.get("status") == "ok"]
+    if not valid:
+        return None
+    return min(valid, key=lambda p: abs(p["distance_m"] - target_distance_m))
+
+
+def query_predict_race_time(
+    conn: sqlite3.Connection,
+    target_distance_m: float,
+    source_activity_id: int | None = None,
+) -> dict[str, Any]:
+    """Predict race time at target distance using Riegel and VDOT.
+
+    If source_activity_id is given, use that activity. Otherwise, pick the
+    PR closest to the target distance.
+    """
+    if target_distance_m <= 0:
+        return {"error": "target_distance_m must be positive"}
+
+    if source_activity_id is not None:
+        src = _one(
+            conn,
+            """
+            SELECT id, name, start_date_local, distance_m, moving_time_s
+            FROM activities
+            WHERE id = ?
+            """,
+            (source_activity_id,),
+        )
+        if src is None:
+            return {"error": f"Activity {source_activity_id} not found"}
+        source_label = "user_specified"
+    else:
+        prs = query_find_personal_records(conn)
+        chosen = _closest_pr_to(prs, target_distance_m)
+        if chosen is None:
+            return {
+                "error": "No personal records available to base prediction on.",
+                "hint": "Need at least one Run with distance >= 5K.",
+            }
+        src = _one(
+            conn,
+            """
+            SELECT id, name, start_date_local, distance_m, moving_time_s
+            FROM activities
+            WHERE id = ?
+            """,
+            (chosen["activity_id"],),
+        )
+        source_label = f"closest_pr ({chosen['distance_label']})"
+        if src is None:
+            return {"error": "PR activity disappeared between queries"}
+
+    prediction = _predict_race_time(
+        known_distance_m=src["distance_m"],
+        known_time_s=src["moving_time_s"],
+        target_distance_m=target_distance_m,
+    )
+
+    return {
+        "source": {
+            "selection": source_label,
+            "activity_id": src["id"],
+            "name": src["name"],
+            "date": str(src.get("start_date_local", ""))[:10],
+            "distance_m": round(src["distance_m"], 1),
+            "time_s": src["moving_time_s"],
+            "time_str": _time_str(src["moving_time_s"]),
+        },
+        "target_distance_m": target_distance_m,
+        "target_distance_km": round(target_distance_m / 1000.0, 4),
+        "riegel": (
+            {
+                **prediction["riegel"],
+                "time_str": _time_str(prediction["riegel"]["time_s"]),
+            }
+            if prediction["riegel"]
+            else None
+        ),
+        "vdot": (
+            {
+                **prediction["vdot"],
+                "time_str": _time_str(prediction["vdot"]["time_s"]),
+            }
+            if prediction["vdot"]
+            else None
+        ),
+        "note": (
+            "Riegel tends to be optimistic for distances much longer than the source race; "
+            "VDOT is generally more conservative for marathon projections from half-marathon data."
+        ),
     }
