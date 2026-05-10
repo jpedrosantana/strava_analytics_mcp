@@ -130,8 +130,6 @@ Com o servidor rodando, o Claude consegue responder perguntas como:
 
 Conversas reais com o Claude usando o MCP — capturas reais do projeto em uso:
 
-> Screenshots em construção. As imagens abaixo ficam em `docs/screenshots/`; basta substituir os arquivos.
-
 ![Análise da semana](docs/screenshots/weekly-analysis.png)
 
 [Ver conversa completa →](docs/conversations/weekly-analysis.md)
