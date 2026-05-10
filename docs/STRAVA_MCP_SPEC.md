@@ -860,7 +860,7 @@ Documentar essas conversas em `docs/conversations/` como evidência funcional do
 
 ## 12. Camada de engenharia de dados e dashboard
 
-Camada complementar ao MCP. **Não bloqueia o roadmap principal** (Fases 0-8) e tem seu próprio roadmap (Fases D1-D7). Pode ser implementada em paralelo ou após Fase 4 do principal.
+Camada complementar ao MCP. **Não bloqueia o roadmap principal** (Fases 0-10) e tem seu próprio roadmap (Fases D1-D7). Pode ser implementada em paralelo ou após Fase 4 do principal. **A camada vive neste mesmo repositório**, com separação interna por módulo (cf. [ADR 0004](decisions/0004-bi-monorepo.md)).
 
 ### 12.1 Motivação
 
