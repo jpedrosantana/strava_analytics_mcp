@@ -1,5 +1,9 @@
 # Strava Analytics MCP
 
+[![CI](https://github.com/jpedrosantana/strava_analytics_mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jpedrosantana/strava_analytics_mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 Plataforma pessoal de análise esportiva via [Model Context Protocol](https://modelcontextprotocol.io/).
 Sincroniza o histórico completo do Strava, aplica modelos de ciência do esporte e expõe insights como tools consumíveis por Claude Code, Claude Desktop ou qualquer cliente MCP compatível.
 
@@ -7,9 +11,10 @@ Sincroniza o histórico completo do Strava, aplica modelos de ciência do esport
 
 - Cache local SQLite com todo o histórico de atividades (backfill + sync incremental)
 - Métricas científicas calculadas localmente: TRIMP, hrTSS, CTL/ATL/TSB, zonas Friel, NGP, eficiência aeróbica, decoupling cardíaco
-- 13 tools MCP para o Claude analisar seus dados de treino via linguagem natural
+- 20 tools MCP para o Claude analisar seus dados de treino via linguagem natural
 - Risco de lesão baseado em ACWR e spikes de volume
-- Roadmap: predições de prova (Riegel/VDOT), clima (Open-Meteo), ML, narrativa gerada por LLM
+- Predições de prova (Riegel + VDOT), clustering de rotas (DBSCAN) e ranking de drivers de performance via Gradient Boosting
+- Narrativa estruturada de períodos e diagnóstico de platô para o LLM consumir como coach
 
 ## Arquitetura
 
@@ -38,6 +43,10 @@ flowchart LR
 
 `setup` faz o handshake OAuth uma única vez. `sync` baixa atividades e streams da Strava para o SQLite local. `compute-metrics` lê o banco, calcula as métricas científicas e grava de volta. `serve` expõe o banco como tools MCP para qualquer cliente compatível.
 
+## Aviso de uso
+
+Este é um projeto pessoal e exploratório. As métricas e diagnósticos (TRIMP, CTL/ATL/TSB, eficiência aeróbica, VDOT, predições de prova, risco de lesão) vêm de modelos heurísticos consagrados na literatura de ciência do esporte — coeficientes derivados de médias populacionais, não de avaliação laboratorial individual. Os resultados servem como apoio à decisão de treino e visibilidade do progresso, **não substituem treinador, profissional de educação física ou médico do esporte**. Mudanças de carga, suspeita de lesão ou prescrição de prova devem ser discutidas com um profissional.
+
 ## Pré-requisitos
 
 - Python 3.11+
@@ -59,19 +68,17 @@ uv sync
 # 1. Autenticar com a Strava API (abre navegador)
 uv run strava-mcp setup
 
-# 2. Baixar histórico completo
-uv run strava-mcp sync --full
+# 2. Backfill completo: atividades + streams (FC/pace/altitude) + métricas analíticas
+#    Streams são necessários para eficiência aeróbica, decoupling e best efforts.
+uv run strava-mcp sync --full --streams --compute
 
-# 3. Calcular métricas analíticas (TRIMP, CTL/ATL/TSB, zonas...)
-uv run strava-mcp compute-metrics
-
-# 4. Verificar saúde dos dados
+# 3. Verificar saúde dos dados
 uv run strava-mcp doctor
 
 # Outros comandos
 uv run strava-mcp sync                    # sync incremental (novidades desde último sync)
-uv run strava-mcp sync --streams          # baixar streams de FC/pace/altitude
-uv run strava-mcp sync --full --compute   # backfill + recalcular métricas
+uv run strava-mcp sync --streams          # baixar streams para atividades antigas
+uv run strava-mcp compute-metrics         # recalcular métricas após mudança em athlete_config
 ```
 
 ## Integração com Claude Code
@@ -94,13 +101,46 @@ O `.claude/settings.json` do repositório já contém `enableAllProjectMcpServer
 
 > **Nota:** Se `uv` não estiver no PATH do Claude Code, use o caminho completo do executável (ex: `/home/user/.local/bin/uv`).
 
-Exemplos de perguntas:
+## Análises possíveis
 
-- *"Como foi meu treino esta semana comparado à semana passada?"*
+Com o servidor rodando, o Claude consegue responder perguntas como:
+
+**Forma e prontidão**
 - *"Qual minha forma atual? Estou pronto para um treino pesado amanhã?"*
-- *"Minha eficiência aeróbica está melhorando nos últimos 3 meses?"*
 - *"Qual o risco de lesão considerando minha carga recente?"*
+- *"Estou em platô? Diagnostique baseado nas últimas 12 semanas."*
+
+**Tendências de longo prazo**
+- *"Minha eficiência aeróbica está melhorando nos últimos 3 meses?"*
+- *"Como meu CTL evoluiu desde janeiro?"*
+- *"Quais features mais influenciam meu pace? Ranqueie por importância."*
+
+**Análises pontuais**
+- *"Como foi meu treino esta semana comparado à semana passada?"*
 - *"Liste as corridas longas do último mês com pace e FC média."*
+- *"Quais foram minhas 3 atividades de maior carga este mês?"*
+- *"Detecte corridas com pace fora do esperado nos últimos 60 dias."*
+- *"Onde corri com mais frequência este ano? Mostre os clusters de rota."*
+
+**Preparação de prova**
+- *"Qual foi meu melhor 21 km? Com qual pace?"*
+- *"Projete meu tempo de maratona baseado no histórico."*
+
+## Demonstração
+
+Conversas reais com o Claude usando o MCP — capturas reais do projeto em uso:
+
+![Análise da semana](docs/screenshots/weekly-analysis.png)
+
+[Ver conversa completa →](docs/conversations/weekly-analysis.md)
+
+![Diagnóstico de forma e prontidão](docs/screenshots/form-diagnosis.png)
+
+[Ver conversa completa →](docs/conversations/form-diagnosis.md)
+
+![Predição de prova e progresso da preparação](docs/screenshots/race-prediction.png)
+
+[Ver conversa completa →](docs/conversations/race-prediction.md)
 
 ## Tools MCP disponíveis
 
@@ -146,7 +186,9 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 
 - [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
 - [Exemplos de System Prompts para Modo Coach](docs/COACH_PROMPTS.md) — templates para usar o MCP como treinador pessoal
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — OAuth, rate limit, sync interrompido, gaps de stream, reset do banco
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — OAuth, rate limit, sync interrompido, gaps de stream, reset do banco, agendamento local
+- [Notebook de exemplo](examples/exploration.ipynb) — uso direto das funções de `analytics/` sem MCP, com plots de CTL/ATL, EF e predição de prova
+- [Como contribuir](CONTRIBUTING.md) e [Código de conduta](CODE_OF_CONDUCT.md)
 
 ## Roadmap
 
@@ -166,4 +208,4 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 
 ## Stack
 
-Python 3.11 · FastMCP · SQLite · httpx · pandas · numpy · uv · ruff
+Python 3.11 · FastMCP · SQLite · SQLAlchemy · httpx · pandas · numpy · scipy · scikit-learn · typer · pydantic · structlog · uv · ruff · pytest

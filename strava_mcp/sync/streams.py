@@ -68,7 +68,12 @@ async def download_streams_batch(
         activity_ids = ActivityRepository.list_ids_without_streams(conn, limit=limit)
 
     if not activity_ids:
-        return {"processed": 0, "message": "Todas as atividades já têm streams."}
+        return {
+            "processed": 0,
+            "success": 0,
+            "errors": 0,
+            "message": "Todas as atividades já têm streams.",
+        }
 
     success = 0
     errors = 0

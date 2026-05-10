@@ -59,17 +59,6 @@ def sync(
 
     client = StravaClient()
 
-    if streams:
-        typer.echo("Baixando streams...")
-        result = asyncio.run(_run_streams(client, streams_limit))
-        typer.echo(
-            f"Streams: {result['success']} ok, {result['errors']} erros "
-            f"(de {result['processed']} atividades)"
-        )
-        if compute:
-            _run_compute()
-        return
-
     if full:
         typer.echo("Iniciando backfill completo...")
 
@@ -87,6 +76,17 @@ def sync(
         except RuntimeError as e:
             typer.echo(f"Erro: {e}", err=True)
             raise typer.Exit(1) from e
+
+    if streams:
+        typer.echo("Baixando streams...")
+        result = asyncio.run(_run_streams(client, streams_limit))
+        if result["processed"] == 0:
+            typer.echo(f"Streams: {result.get('message', 'nada para baixar.')}")
+        else:
+            typer.echo(
+                f"Streams: {result['success']} ok, {result['errors']} erros "
+                f"(de {result['processed']} atividades)"
+            )
 
     if compute:
         _run_compute()
