@@ -1,7 +1,6 @@
 """Landing page do dashboard. Mostra forma atual + últimas atividades."""
 
 import streamlit as st
-
 from db import query
 from theme import ACWR_HIGH, ACWR_LOW, tsb_label
 

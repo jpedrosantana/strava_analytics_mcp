@@ -3,7 +3,6 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-
 from db import query
 
 st.set_page_config(

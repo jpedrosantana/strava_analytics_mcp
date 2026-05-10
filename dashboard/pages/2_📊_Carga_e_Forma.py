@@ -3,9 +3,8 @@
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
-
 from db import query
+from plotly.subplots import make_subplots
 from theme import (
     ACWR_HIGH,
     ACWR_LOW,
@@ -71,10 +70,11 @@ st.caption(
     "é a forma do dia: positivo = descansado, negativo = carregado."
 )
 
-if period_days:
-    where_pmc = f"date_key >= current_date - interval {period_days} day"
-else:
-    where_pmc = "1=1"
+where_pmc = (
+    f"date_key >= current_date - interval {period_days} day"
+    if period_days
+    else "1=1"
+)
 
 pmc = query(
     f"""
