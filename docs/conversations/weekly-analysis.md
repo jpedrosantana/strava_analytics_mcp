@@ -1,55 +1,65 @@
 # Análise da semana
 
-Conversa real com o Claude usando o MCP `strava-analytics`. Data: 09/05/2026.
+Conversa real com o Claude usando o MCP `strava-analytics`. Data: 10/05/2026.
 
 ---
 
 > **Como foi minha semana de treino comparada à semana anterior? Quero ver volume total, distribuição por zona, principais sessões e se algo se destacou — pra cima ou pra baixo.**
 
-## Semana atual (04–10/05, W18) vs Semana anterior (27/04–03/05, W17)
+## Comparação W18 (atual) vs W17 (anterior)
 
-Dados via `compare_periods` + detalhes por atividade (LTHR=177, zonas estimadas pela avg HR).
-
-### Volume agregado
-
-| Métrica | W18 (atual) | W17 (anterior) | Δ |
+| Métrica | W17 (27/04–03/05) | W18 (04/05–10/05) | Δ |
 |---|---|---|---|
-| Atividades | 5 | 8 | **−37%** |
-| Corridas (km) | 38.6 | 42.3 | −8.7% |
-| Tempo total (h) | 5.6 | 10.6 | **−47%** |
-| TRIMP | 404 | 694 | **−42%** |
-| Elev. acum. (m) | 100 | 64 | +56% |
+| Atividades | 8 (4 corrida + 4 muscul.) | 6 (3 corrida + 3 muscul.) | **−2 (−25%)** |
+| Distância (corrida) | 42.31 km | 38.62 km | −3.69 km (−8.7%) |
+| Tempo total | 10.62 h | 7.88 h | **−2.74 h (−25.8%)** |
+| Elevação | 64 m | 100 m | +36 m (+56%) |
+| TRIMP | 693.7 | 528.6 | **−165 (−23.8%)** |
+| HR-TSS | 660.9 | 504.8 | −156 (−23.6%) |
+| CTL (fim) | 72.3 → 71.2 | 72.3 → **70.9** | −1.3 |
+| TSB (fim) | −22.3 (sexta) | **−5.9** | **+16.4** |
 
-A queda no tempo/TRIMP **não veio da corrida** (volume quase igual) — veio da musculação: você passou de 4 sessões (incluindo duas funcionais longas: 122min e 147min) para 2 sessões curtas (60min cada).
+**Leitura macro:** semana de **alívio** (−24% de carga, −26% de tempo). Era o esperado: você vinha de TSB −22 e agora está em −5.9 — recuperação saudável sem perder fitness (CTL caiu só 1.3).
 
-### Distribuição por zona — corridas
+## Distribuição por zona (W18)
 
-**W18 (atual)** — 3 corridas, todas em base aeróbica:
-- 04/05 — 10.59 km @ 6:00/km, avgHR 145 → **Z2** (rodagem leve, perfeita)
-- 06/05 — 12.01 km @ 5:26/km, avgHR 147 → **Z2/Z3 baixa**
-- 09/05 — 16.02 km @ 5:23/km, avgHR 160, maxHR 181 → **Z3** (longão sólido)
+| Zona | % | Observação |
+|---|---|---|
+| Z1 | **54.4%** | Alta — musculação puxa muito Z1 |
+| Z2 | 27.3% | Saudável (rodage) |
+| Z3 | **0%** | ⚠️ Zero estímulo de tempo/aeróbico-forte |
+| Z4 | 18.3% | Vem do longão (FC 160 = limiar baixo) |
+| Z5 | **0%** | Zero estímulo neuromuscular/VO2 |
 
-**W17 (anterior)** — 4 corridas, com 1 sessão de qualidade:
-- 27/04 — 10.02 km @ 5:30/km, avgHR 150 → Z3 baixa
-- 29/04 — 10.21 km @ 5:53/km, avgHR 145 → Z2/Z3
-- 30/04 — 10.04 km @ 5:58/km, avgHR 148 (esteira) → Z3 baixa
-- **02/05 — 12.03 km @ 5:30/km, avgHR 174, maxHR 192 → Z4 (limiar)** ← sessão de qualidade
+## Sessões da W18
 
-### Destaques
+| Dia | Sessão | km | Pace | FC | TRIMP/Suffer |
+|---|---|---|---|---|---|
+| 04/05 seg | Rodage leve | 10.59 | 6:00/km | 145 | 127 |
+| 05/05 ter | Musculação 60 min | — | — | 103 | 18 |
+| 06/05 qua | Rodage moderado | 12.01 | 5:26/km | 147 | 155 |
+| 07/05 qui | Musculação 60 min | — | — | 107 | 18 |
+| **09/05 sáb** | **Longão 16k** | **16.02** | **5:23/km** | **160** | **313** |
+| 10/05 dom | Musculação 137 min | — | — | 128 | 124 |
 
-**Pra cima**
-- **Longão de hoje (16 km @ 5:23, FC 160)** — mais longo desde a corrida de 23 km em 12/04, e em ritmo controlado. Bom estímulo aeróbico pra base da maratona.
-- **04/05** — rodagem regenerativa textbook (6:00/km @ FC 145). Dose certa.
+## O que se destacou
 
-**Pra baixo**
-- **Sumiu a sessão de qualidade na corrida.** Semana anterior teve um Z4 forte (02/05). Esta semana foi 100% Z2/Z3 — para preparação de maratona em julho, esperado ter ao menos 1 estímulo de limiar/intervalado por semana.
-- **Musculação caiu de 4→2 sessões**, e as duas foram curtas/leves (avgHR ~105). Foge do padrão habitual (2-3 funcional + 1 musc). Se foi planejado, ok; se não, vale resgatar.
-- Nenhum *two-a-day* esta semana (W17 teve 3).
+**Pra cima** ✅
+- **Longão de 16 km a pace 5:23/km / FC 160** — sessão mais bem executada da semana. FC ≈ 90% LTHR, dentro de faixa de meia-tempo, e pace abaixo das projeções de maratona. Foi o treino "rainha" e justifica a recuperação rápida de TSB depois.
+- **Elevação +56%** vs semana anterior (mas em valor absoluto ainda modesto).
+- **Recuperação de forma**: TSB saltou de −22 para −6 sem perder CTL.
 
-### Leitura curta
+**Pra baixo** ⚠️
+- **Sumiu o estímulo de qualidade**: Z3 e Z5 zerados. Na semana anterior houve a corrida de **02/05 (12 km, FC 174.7)** — claramente um tempo/intervalado forte que essa semana não teve equivalente.
+- **Uma corrida a menos** (3 vs 4) e tempo total caiu 26% — boa parte por uma sessão de musculação mais curta também.
+- **1 dia com ACWR > 1.3** sinalizado (provavelmente 09/05, dia do longão, quando ATL deu pulo). Nada crítico — voltou pra 1.08.
 
-A semana foi **mais leve em carga total**, mas **a corrida em si manteve volume**. O que faltou foi intensidade na corrida e regularidade na força. Se a próxima semana tem prova ou bloco-chave, faz sentido; se não, sugiro reintroduzir 1 sessão de limiar/fartlek e fechar a base de força.
+## Síntese
+
+Semana de **descarga relativa bem calibrada**: você reduziu carga (−24% TRIMP) sem desmontar a base (CTL −1.3) e ainda entregou um longão sólido. O contrassenso é que sumiu o trabalho de qualidade — pra maratona em julho, é preciso pelo menos um intervalado/tempo por semana, e a W18 ficou só com Z2/longão.
+
+A combinação "TSB recuperado + intervalado em falta" é exatamente o cenário em que faz sentido a próxima semana abrir com uma sessão de qualidade (terça, depois do regenerativo de segunda).
 
 ---
 
-**Tools MCP usadas:** `compare_periods`, `get_weekly_breakdown`, `list_activities`, `get_activity` (×7).
+**Tools MCP usadas:** `compare_periods`, `get_weekly_breakdown`, `generate_period_narrative`, `list_activities`.

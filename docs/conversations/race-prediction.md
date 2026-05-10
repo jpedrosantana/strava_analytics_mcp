@@ -1,6 +1,6 @@
 # Predição de prova e progresso da preparação
 
-Conversa real com o Claude usando o MCP `strava-analytics`. Data: 09/05/2026.
+Conversa real com o Claude usando o MCP `strava-analytics`. Data: 10/05/2026.
 
 ---
 
@@ -8,82 +8,63 @@ Conversa real com o Claude usando o MCP `strava-analytics`. Data: 09/05/2026.
 
 ## Melhor 21K do histórico
 
-**Mizuno Athenas Run Faster — 15/03/2026** (8 semanas atrás)
+**Mizuno Athenas Run Faster** — 15/03/2026
 
-- 21.22 km em **1:40:11** (pace 4:43/km)
-- avgHR 175 (≈99% LTHR), maxHR 189
-- **Decoupling −1.48%** (excellent — FC/pace mantiveram paridade até o fim)
-- **EF na prova: 0.0202**
+- Distância: 21.224 km · Tempo: **1:40:11** · Pace: **4:43/km** · FC média: 175 (≈ 99% do LTHR de 177)
 
-## Projeções de maratona
+## Projeções de maratona (a partir desse 21K)
 
-**Riegel** (T₂ = T₁ × (D₂/D₁)^1.06):
-
-- 6011s × (42.195/21.224)^1.06 = 6011 × 2.0716 ≈ **12.453s → 3:27:33** (pace **4:55/km**)
-
-**VDOT** (Daniels):
-
-- HM 1:40:11 ≈ **VDOT 44–45**
-- Marathon equivalente: **3:21:38–3:25:46** (pace 4:46–4:53/km)
-
-**Faixa realista para 1ª maratona: 3:25–3:35 (4:52–5:05/km)**
-
-Riegel/VDOT assumem endurance perfeitamente escalável. Para primeira maratona, é prudente adicionar **+5 a +10 min** sobre Riegel se a base de longões >28 km não estiver consolidada — e esse é o seu caso (mais sobre isso abaixo).
-
-## EF sustenta esse pace?
-
-**EF mensal (treinos):**
-
-| Mês | EF | Contexto |
+| Modelo | Tempo | Pace |
 |---|---|---|
-| Nov 2025 | 0.0193 | Mês da Brasília 21K |
-| Dez 2025 | 0.0181 | — |
-| **Jan 2026** | **0.0180** | Canelite |
-| Fev 2026 | 0.0187 | — |
-| Mar 2026 | 0.0192 | Mês do PR |
-| Abr 2026 | 0.0187 | CTL alto (carga) |
-| Mai 2026 | 0.0192 | (4 atividades) |
+| **Riegel** (k=1.06) | **3:27:33** | 4:55/km |
+| **VDOT 45.36** | **3:26:52** | 4:54/km |
 
-A flag "declining" do tool é miopia recente — olhando 6 meses, **EF está estável em ~0.019**, com a queda de jan totalmente recuperada.
+⚠️ Nota do próprio modelo: Riegel costuma ser **otimista** para alvos muito maiores que a corrida-fonte. VDOT é mais conservador, mas ambos assumem **base aeróbica preparada** para 42 km — coisa que uma meia não comprova.
 
-**EF necessário para sustentar pace projetado (FC alvo Z3, 168–172):**
+## Tendência de eficiência aeróbica (6 meses)
 
-| Pace alvo | Velocidade | EF necessário (HR 170) |
+| Mês | EF | n |
 |---|---|---|
-| 4:50/km | 3.45 m/s | **0.0203** |
-| 4:55/km | 3.39 m/s | **0.0199** |
-| 5:00/km | 3.33 m/s | **0.0196** |
+| Nov/25 | 0.01904 | 7 |
+| Dez/25 | 0.01811 | 14 |
+| **Jan/26** (canelite) | 0.01804 | 11 |
+| Fev/26 | 0.01865 | 11 |
+| **Mar/26** (PR meia) | **0.01922** | 11 |
+| Abr/26 | 0.01873 | 17 |
+| Mai/26 (parcial) | 0.01915 | 4 |
 
-**Veredicto sobre EF:** Atualmente em treino você roda em **0.0192**. Em prova você comprime para **0.0202** (visto na PR). Ou seja:
+**Trend: improving** — recuperou da canelite e está em alta, ~+6% desde jan.
 
-- Pace 4:55/km (Riegel) está **no limite** do que seu motor sustenta hoje — viável **se em modo prova** + carb loading + ambiente fresco.
-- Pace 4:50/km (VDOT) exige um EF que você **ainda não demonstrou** em distância > 21K.
-- Pace 5:00/km é a zona segura — sustentável com EF atual mesmo descontando fadiga do segundo tempo.
+## A EF sustenta o pace projetado? **Provavelmente não, ainda.**
 
-## Endurance específico — o ponto fraco
+O que o pace de 4:54/km exige:
 
-| Longão recente | Distância | Decoupling | Grade |
+- Pace 4:54/km = **3.40 m/s**
+- Uma maratona realista corre-se em **85–90% LTHR** (≈ 150–160 bpm pro LTHR 177)
+- EF necessária para 3.40 m/s a FC 155: **~0.0219**
+- EF necessária para 3.40 m/s a FC 160: **~0.0213**
+
+**EF atual (~0.019) está ~12–15% abaixo do que o pace VDOT exige em FC de maratona.**
+
+Para referência, na própria prova de 15/03 a EF foi ≈ 0.0202, mas a 175 bpm — intensidade de meia, **insustentável por 42 km**.
+
+## Síntese realista
+
+- **Riegel/VDOT (3:27)**: otimistas. Pressupõem que a aeróbica já está em nível de marathon, o que a EF ainda não confirma.
+- **Faixa mais provável hoje**: **3:35–3:45** (pace 5:05–5:20/km). Considera EF atual + zero histórico de >25 km + janeiro perdido.
+- **A favor**: tendência clara de melhora, CTL no maior nível recente (70.9), sem sinais de risco.
+- **O que pode mudar isso até julho** (~9 semanas): sustentar progressão de EF até ~0.021, encarar bem o 21K e o 25K como "ensaios" de pace de maratona, e ter pelo menos 2–3 longões ≥ 28 km com pace alvo no fim.
+
+## Sugestão de pace para a maratona
+
+| Cenário | Pace | Tempo | Como tratar |
 |---|---|---|---|
-| 28/03 | 18.0 km | +11.5% | needs_work |
-| 12/04 | **23.0 km** | −14.4% | excellent |
-| 18/04 | 16.25 km | +5.2% | adequate |
-| 09/05 | 16.0 km | +3.3% | excellent |
+| **A (cauteloso)** | 5:15/km | 3:41:34 | Pace alvo padrão até km 30, libera depois |
+| **B (realista)** | 5:05/km | 3:34:39 | Só se EF subir para ~0.0205 e longões confirmarem |
+| **C (VDOT)** | 4:54/km | 3:26:52 | Não justificado pelos dados atuais |
 
-O único longão >21 km nos últimos 3 meses foi o de **23 km em 12/04**, e foi excelente. Mas para maratona, você precisa de **2–3 longões na faixa de 28–32 km** (com últimos km em pace de prova) para validar empiricamente que o motor não desmonta após ~25 km. Isso é o que falta no histórico.
-
-## Resposta direta
-
-- **Pace alvo realista: 4:55–5:00/km (3:27–3:31 finish)** — Riegel é o teto, não o piso.
-- **EF sustenta 4:55? Sim, no limite.** Sustenta 5:00 com folga. Não sustenta 4:50 sem upside extra que ainda não está no histórico.
-- **Decoupling em 16–23 km é ótimo**, mas faltam longões longos para validar endurance maratona.
-- **Plano para fechar o gap (8 semanas até julho):**
-  1. Reintroduzir 1 sessão de qualidade/semana (limiar @ 4:35–4:45 ou MP @ 4:55)
-  2. Progressão de longões: 25 → 28 → 30 → 32 km (com últimos 6–8 km em pace de prova)
-  3. Subir CTL para ~75–78 antes do tapper de 2 semanas
-  4. Usar a prova de 21K e a de 25K como rehearsal de pace e fueling
-
-Se executar o bloco específico, **3:25–3:30 é palpável**. Sem ele, **3:30–3:40** é mais honesto.
+**Para validar/ajustar:** rodar os 21K e 25K que faltam **em pace de maratona-alvo** (não em ritmo de prova de meia) e medir o decoupling — se o HR drift ficar < 5% num longão de 25–28 km no pace B, ganha argumento pra ir mais agressivo.
 
 ---
 
-**Tools MCP usadas:** `find_personal_records`, `search_activities`, `get_aerobic_efficiency_trend`, `get_decoupling_trend`, `get_activity`.
+**Tools MCP usadas:** `find_personal_records`, `predict_race_time`, `get_aerobic_efficiency_trend`.
