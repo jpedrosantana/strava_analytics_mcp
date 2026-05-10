@@ -41,6 +41,11 @@ dbt = [
     "dbt-core>=1.8.0",
     "dbt-duckdb>=1.8.0",
 ]
+dashboard = [
+    "streamlit>=1.40.0",
+    "plotly>=5.24.0",
+    "duckdb>=1.1.0",
+]
 
 [tool.ruff]
 line-length = 100
