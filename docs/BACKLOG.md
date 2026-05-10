@@ -54,6 +54,27 @@ Itens **[Alta]** já agendados em um roadmap em execução trazem nota explícit
 
 > **Status:** agendado para execução antes da Fase D4 (roadmap de dados, spec §12.8). Mart `fct_race_performance` consome a coluna populada.
 
+### [Alta] Investigar `r_tss` sempre NULL
+
+**Problema:** durante o smoke test do D5 descobrimos que `activity_metrics.r_tss` está NULL em **100% das atividades** — incluindo as 194 corridas. O `hr_tss` tem 99,7% de cobertura, então o dashboard funciona usando `coalesce(r_tss, hr_tss)`, mas para corridas o ideal é o rTSS, que compensa elevação via NGP.
+
+**Hipótese principal:** o cálculo em `analytics/load.py` provavelmente depende de `threshold_pace` no `athlete_config`, que nunca foi populado. Sem threshold, a função retorna NULL silenciosamente.
+
+**Impacto downstream:**
+- `fct_activity.r_tss` NULL → marts de treino (D3 weekly_summary) e prova (D4 race_performance) caem no `hr_tss` para corridas
+- `hr_tss` pode subestimar carga em intervalados (FC tem inércia, não acompanha picos curtos)
+- `predict_race_time` usa NGP — se o pipeline NGP estiver quebrado, a predição também sofre
+
+**Solução proposta:**
+- Auditar `analytics/load.py:r_tss` (e `analytics/ngp.py`) para identificar a condição que retorna NULL
+- Se faltar `threshold_pace`: estimar via melhor meia recente (faixa 4:43-4:55/km) e popular `athlete_config`
+- Reexecutar `compute-metrics --recompute` após o fix
+- Comparar r_tss vs hr_tss em ≥10 corridas variadas — se diferença média for grande (>10%), atualizar marts; se pequena, fica como tech debt
+
+**Impacto:** pipeline de carga corrige a métrica de gold standard pra runs, marts D3+ ficam mais íntegros, predict_race_time volta a ter NGP útil.
+
+> **Status:** agendado para execução antes da Fase D4, junto com `Best efforts via streams` e `Extrair average_temp` (bundle de quality fixes pré-marts de prova).
+
 ### [Média] Camada de qualidade de dados (Data Quality Layer)
 
 **Problema:** múltiplas classes de erro nos streams entram direto nos cálculos sem qualquer defensivo. Auditoria da Fase 8 confirmou que o único filtro existente é `np.clip(grade, ±0.45)` em NGP e drop de HR=0 em EF — qualquer outro tipo de ruído contamina métricas downstream. Categorias relevantes:
