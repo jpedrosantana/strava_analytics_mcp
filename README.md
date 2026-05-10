@@ -1,5 +1,9 @@
 # Strava Analytics MCP
 
+[![CI](https://github.com/jpedrosantana/strava_analytics_mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jpedrosantana/strava_analytics_mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 Plataforma pessoal de análise esportiva via [Model Context Protocol](https://modelcontextprotocol.io/).
 Sincroniza o histórico completo do Strava, aplica modelos de ciência do esporte e expõe insights como tools consumíveis por Claude Code, Claude Desktop ou qualquer cliente MCP compatível.
 
@@ -94,13 +98,42 @@ O `.claude/settings.json` do repositório já contém `enableAllProjectMcpServer
 
 > **Nota:** Se `uv` não estiver no PATH do Claude Code, use o caminho completo do executável (ex: `/home/user/.local/bin/uv`).
 
-Exemplos de perguntas:
+## Análises possíveis
 
-- *"Como foi meu treino esta semana comparado à semana passada?"*
+Com o servidor rodando, o Claude consegue responder perguntas como:
+
+**Forma e prontidão**
 - *"Qual minha forma atual? Estou pronto para um treino pesado amanhã?"*
-- *"Minha eficiência aeróbica está melhorando nos últimos 3 meses?"*
 - *"Qual o risco de lesão considerando minha carga recente?"*
+- *"Estou em platô? Diagnostique baseado nas últimas 12 semanas."*
+
+**Tendências de longo prazo**
+- *"Minha eficiência aeróbica está melhorando nos últimos 3 meses?"*
+- *"Como meu CTL evoluiu desde janeiro?"*
+- *"Quais features mais influenciam meu pace? Ranqueie por importância."*
+
+**Análises pontuais**
+- *"Como foi meu treino esta semana comparado à semana passada?"*
 - *"Liste as corridas longas do último mês com pace e FC média."*
+- *"Quais foram minhas 3 atividades de maior carga este mês?"*
+- *"Detecte corridas com pace fora do esperado nos últimos 60 dias."*
+- *"Onde corri com mais frequência este ano? Mostre os clusters de rota."*
+
+**Preparação de prova**
+- *"Qual foi meu melhor 21 km? Com qual pace?"*
+- *"Projete meu tempo de maratona baseado no histórico."*
+
+## Demonstração
+
+Conversas reais com o Claude usando o MCP — capturas reais do projeto em uso:
+
+> Screenshots em construção. As imagens abaixo ficam em `docs/screenshots/`; basta substituir os arquivos.
+
+![Análise da semana](docs/screenshots/weekly-analysis.png)
+
+![Diagnóstico de forma e prontidão](docs/screenshots/form-diagnosis.png)
+
+![Predição de prova e progresso da preparação](docs/screenshots/race-prediction.png)
 
 ## Tools MCP disponíveis
 
@@ -146,7 +179,9 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 
 - [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
 - [Exemplos de System Prompts para Modo Coach](docs/COACH_PROMPTS.md) — templates para usar o MCP como treinador pessoal
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — OAuth, rate limit, sync interrompido, gaps de stream, reset do banco
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — OAuth, rate limit, sync interrompido, gaps de stream, reset do banco, agendamento local
+- [Notebook de exemplo](examples/exploration.ipynb) — uso direto das funções de `analytics/` sem MCP, com plots de CTL/ATL, EF e predição de prova
+- [Como contribuir](CONTRIBUTING.md) e [Código de conduta](CODE_OF_CONDUCT.md)
 
 ## Roadmap
 

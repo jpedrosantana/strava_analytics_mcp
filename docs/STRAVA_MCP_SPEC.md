@@ -698,10 +698,10 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 
 ### Fase 9 — Polish e portfólio (objetivo: projeto público forte)
 
-- [ ] README com badges (build, license, Python version), ≥3 screenshots de conversas reais com Claude, seção "Análises possíveis" com ≥10 prompts-exemplo (diagrama de arquitetura já entregue na Fase 8)
-- [ ] Notebook Jupyter `examples/exploration.ipynb` com ≥5 células executadas demonstrando uso direto das funções de analytics (sem MCP), com saídas visíveis
-- [ ] GitHub Actions de CI (lint + testes) com badge no README; exemplo de agendamento local (cron/systemd timer) documentado em `docs/TROUBLESHOOTING.md` (cf. [ADR 0003](decisions/0003-ci-scope-local-first.md))
-- [ ] LICENSE (MIT), CONTRIBUTING.md (rodar local, padrão de commits, abertura de PR) e CODE_OF_CONDUCT.md
+- [ ] README com badges (build, license, Python version), ≥3 screenshots de conversas reais com Claude, seção "Análises possíveis" com ≥10 prompts-exemplo (diagrama de arquitetura já entregue na Fase 8) — *badges + prompts ✓; screenshots a capturar pelo autor*
+- [x] Notebook Jupyter `examples/exploration.ipynb` com ≥5 células executadas demonstrando uso direto das funções de analytics (sem MCP), com saídas visíveis
+- [x] GitHub Actions de CI (lint + testes) com badge no README; exemplo de agendamento local (cron/systemd timer) documentado em `docs/TROUBLESHOOTING.md` (cf. [ADR 0003](decisions/0003-ci-scope-local-first.md))
+- [x] LICENSE (MIT), CONTRIBUTING.md (rodar local, padrão de commits, abertura de PR) e CODE_OF_CONDUCT.md
 
 **Aceitação:** todos os itens acima marcados; setup do README validado por ≥1 pessoa fora do projeto, completando com sucesso o caminho do clone até a primeira pergunta respondida no Claude.
 
