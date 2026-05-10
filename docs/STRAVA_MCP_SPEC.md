@@ -700,11 +700,20 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 
 - [ ] README com badges (build, license, Python version), ≥3 screenshots de conversas reais com Claude, seção "Análises possíveis" com ≥10 prompts-exemplo (diagrama de arquitetura já entregue na Fase 8)
 - [ ] Notebook Jupyter `examples/exploration.ipynb` com ≥5 células executadas demonstrando uso direto das funções de analytics (sem MCP), com saídas visíveis
-- [ ] GitHub Actions com workflow agendado (cron diário) executando `sync` + `compute-metrics`; badge de status no README
-- [ ] Post de blog ou LinkedIn publicado (≥800 palavras) sobre arquitetura, aprendizados e ≥1 insight real extraído pelo próprio autor; link adicionado ao README
+- [ ] GitHub Actions de CI (lint + testes) com badge no README; exemplo de agendamento local (cron/systemd timer) documentado em `docs/TROUBLESHOOTING.md` (cf. [ADR 0003](decisions/0003-ci-scope-local-first.md))
 - [ ] LICENSE (MIT), CONTRIBUTING.md (rodar local, padrão de commits, abertura de PR) e CODE_OF_CONDUCT.md
 
 **Aceitação:** todos os itens acima marcados; setup do README validado por ≥1 pessoa fora do projeto, completando com sucesso o caminho do clone até a primeira pergunta respondida no Claude.
+
+### Fase 10 — Conteúdo público (objetivo: narrar a evolução do projeto)
+
+- [ ] Post (blog ou LinkedIn) ≥800 palavras conectando a evolução: assistente MCP conversacional → identificação de limitações → projeto de BI complementar → plataforma integrada de analytics
+- [ ] ≥1 insight real extraído pelo próprio autor usando o sistema
+- [ ] Link adicionado ao README
+
+**Aceitação:** post publicado e linkado no README.
+
+> **Nota:** esta fase fica deliberadamente aberta até a conclusão do projeto de BI subsequente, para que a narrativa cubra a evolução completa em vez de fragmentar em posts isolados.
 
 ---
 
