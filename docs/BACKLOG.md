@@ -50,7 +50,7 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 - **Pace impossível** (split de 2:30/km em terreno plano)
 - **Mismatch moving vs elapsed**: paradas longas inflam um sem afetar o outro
 
-**Exemplo real:** meia maratona em 12/04/2026 registrou 23 km no Strava (kms 17–19 com pace zoado por túnel). Aparece como `longest` + `fastest_run` + `highest_load` no `generate_period_narrative` das últimas 4 semanas, com pace de 5:09/km — artificialmente otimista (distância real ≈ 21,1 km).
+**Exemplo real:** meia maratona em 12/04/2026 registrou 23 km no Strava (kms 17–19 com pace inconsistente por perda de sinal em túnel). Aparece como `longest` + `fastest_run` + `highest_load` no `generate_period_narrative` das últimas 4 semanas, com pace de 5:09/km — artificialmente otimista (distância real ≈ 21,1 km).
 
 **Solução proposta (camada com 3 frentes complementares):**
 - **Flag manual**: campo `data_quality` em `activities` (`gps_corrupt`, `hr_corrupt`, `race_official_distance` etc.) marcado pelo usuário; analytics filtram ou ajustam
