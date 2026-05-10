@@ -68,19 +68,17 @@ uv sync
 # 1. Autenticar com a Strava API (abre navegador)
 uv run strava-mcp setup
 
-# 2. Baixar histórico completo
-uv run strava-mcp sync --full
+# 2. Backfill completo: atividades + streams (FC/pace/altitude) + métricas analíticas
+#    Streams são necessários para eficiência aeróbica, decoupling e best efforts.
+uv run strava-mcp sync --full --streams --compute
 
-# 3. Calcular métricas analíticas (TRIMP, CTL/ATL/TSB, zonas...)
-uv run strava-mcp compute-metrics
-
-# 4. Verificar saúde dos dados
+# 3. Verificar saúde dos dados
 uv run strava-mcp doctor
 
 # Outros comandos
 uv run strava-mcp sync                    # sync incremental (novidades desde último sync)
-uv run strava-mcp sync --streams          # baixar streams de FC/pace/altitude
-uv run strava-mcp sync --full --compute   # backfill + recalcular métricas
+uv run strava-mcp sync --streams          # baixar streams para atividades antigas
+uv run strava-mcp compute-metrics         # recalcular métricas após mudança em athlete_config
 ```
 
 ## Integração com Claude Code
@@ -206,4 +204,4 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 
 ## Stack
 
-Python 3.11 · FastMCP · SQLite · httpx · pandas · numpy · uv · ruff
+Python 3.11 · FastMCP · SQLite · SQLAlchemy · httpx · pandas · numpy · scipy · scikit-learn · typer · pydantic · structlog · uv · ruff · pytest
