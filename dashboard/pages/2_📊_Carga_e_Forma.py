@@ -64,6 +64,12 @@ st.divider()
 
 # PMC chart
 st.subheader("Performance Management Chart")
+st.caption(
+    "**CTL** (linha azul) é fitness — média exponencial de 42 dias do TSS, "
+    "sobe e cai devagar. **ATL** (linha vermelha tracejada) é fadiga, mesma "
+    "lógica em janela de 7 dias, reage rápido. **TSB = CTL − ATL** (barras) "
+    "é a forma do dia: positivo = descansado, negativo = carregado."
+)
 
 if period_days:
     where_pmc = f"date_key >= current_date - interval {period_days} day"
@@ -146,6 +152,11 @@ st.divider()
 
 # ACWR chart
 st.subheader("ACWR ao longo do tempo")
+st.caption(
+    "**ACWR = ATL / CTL** — razão entre carga aguda e crônica. A literatura "
+    "sugere **0,8–1,3** como zona segura (banda verde): abaixo, subtreinamento; "
+    "acima, risco aumentado de lesão por progressão rápida demais."
+)
 
 if not pmc.empty:
     acwr_df = pmc.copy()
