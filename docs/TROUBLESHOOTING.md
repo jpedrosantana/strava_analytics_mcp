@@ -101,3 +101,20 @@ sqlite3 data/strava.db "DELETE FROM activities WHERE id = <ACTIVITY_ID>; \
                         DELETE FROM activity_metrics WHERE activity_id = <ACTIVITY_ID>;"
 uv run strava-mcp sync          # incremental — só pega o delta após o último sync, ajustar se necessário
 ```
+
+---
+
+## 6. Agendamento local com cron
+
+Como o projeto é local-first (banco SQLite + tokens OAuth na máquina do autor — cf. [ADR 0003](decisions/0003-ci-scope-local-first.md)), o sync diário roda direto no seu computador. Exemplo de entrada em crontab para sincronizar todo dia às 06:00 e recalcular as métricas:
+
+```cron
+# m h dom mon dow command
+0 6 * * * cd /caminho/absoluto/para/strava_analytics_mcp && /home/SEU_USUARIO/.local/bin/uv run strava-mcp sync && /home/SEU_USUARIO/.local/bin/uv run strava-mcp compute-metrics >> /tmp/strava-sync.log 2>&1
+```
+
+Edite com `crontab -e`. Pontos de atenção:
+- Use **caminho absoluto do `uv`** (`which uv` para descobrir) — o crontab roda com PATH mínimo.
+- O `cd` é necessário porque os comandos esperam encontrar `data/strava.db` relativo ao diretório do projeto.
+- Streams (`sync --streams`) não estão no comando porque são mais pesados; rode-os semanalmente ou sob demanda.
+- Para diagnosticar falhas: `cat /tmp/strava-sync.log` ou troque `2>&1` por `mailto:` no topo do crontab para receber por e-mail local.
