@@ -1,0 +1,13 @@
+strava:
+  outputs:
+    dev:
+      type: duckdb
+      path: ../data/strava.duckdb
+      threads: 4
+      extensions:
+        - sqlite
+      attach:
+        - path: ../data/strava.db
+          type: sqlite
+          alias: strava_raw
+  target: dev

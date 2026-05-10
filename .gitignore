@@ -9,7 +9,9 @@ data/
 logs/
 target/
 dbt_packages/
+**/.user.yml
 .claude/settings.local.json
 .mcp.json
 docs/ai_review/
 docs/PRODUCT_NOTES.md
+docs/POST_STRATEGY.md

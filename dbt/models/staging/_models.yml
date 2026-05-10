@@ -1,0 +1,80 @@
+version: 2
+
+models:
+  - name: stg_strava__activities
+    description: "Atividades do Strava — staging view 1:1 com a tabela `activities` do operational store, com `raw_json` (blob) excluído."
+    columns:
+      - name: activity_id
+        description: "Strava activity ID. PK natural."
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: "Nome da atividade conforme o Strava."
+        tests:
+          - not_null
+      - name: sport_type
+        description: "Categoria do esporte. Strava define o vocabulário."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Run', 'Ride', 'Swim', 'Walk', 'Hike', 'WeightTraining', 'Workout', 'Pilates', 'Yoga', 'VirtualRun', 'VirtualRide']
+              config:
+                severity: warn
+      - name: workout_type
+        description: "Sub-tipo (Strava): 0=default, 1=race, 2=long run, 3=workout."
+      - name: start_date_utc
+        description: "Início da atividade em UTC."
+        tests:
+          - not_null
+      - name: start_date_local
+        description: "Início da atividade no fuso local registrado."
+        tests:
+          - not_null
+      - name: distance_m
+        description: "Distância total (metros). Pode estar inflada por GPS (cf. backlog: Camada de Qualidade de Dados)."
+      - name: moving_time_s
+        description: "Tempo em movimento (segundos)."
+      - name: elapsed_time_s
+        description: "Tempo total decorrido (segundos), incluindo paradas."
+
+  - name: stg_strava__activity_metrics
+    description: "Métricas analíticas calculadas pelo MCP (TRIMP, hrTSS, EF, decoupling, zonas)."
+    columns:
+      - name: activity_id
+        description: "FK para `stg_strava__activities.activity_id`."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('stg_strava__activities')
+                field: activity_id
+      - name: trimp
+        description: "TRIMP (Banister) baseado em FC. Null se atividade sem stream/avg de FC."
+      - name: aerobic_efficiency
+        description: "EF = NGP_mps / FC_média. Indicador de fitness aeróbica."
+      - name: decoupling_pct
+        description: "Aerobic decoupling Pa:HR (%) em corridas longas (≥60min)."
+
+  - name: stg_strava__daily_metrics
+    description: "Roll-up diário de carga (CTL/ATL/TSB) e volume. Série contínua entre primeira e última atividade — dias sem treino entram com TSS=0."
+    columns:
+      - name: date
+        description: "Data (UTC). PK."
+        tests:
+          - not_null
+          - unique
+      - name: ctl
+        description: "Chronic Training Load (média exponencial 42d do TSS)."
+        tests:
+          - not_null
+      - name: atl
+        description: "Acute Training Load (média exponencial 7d do TSS)."
+        tests:
+          - not_null
+      - name: tsb
+        description: "Training Stress Balance = CTL_ontem - ATL_ontem. Proxy de forma."
+        tests:
+          - not_null
