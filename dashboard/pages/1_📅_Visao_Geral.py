@@ -58,7 +58,11 @@ c4.metric("Elevação", f"{int(totals['total_elev_m'] or 0)} m")
 st.divider()
 
 # Calendar heatmap
-st.subheader("Carga diária (TSS)")
+st.subheader("Calendário de carga diária")
+st.caption(
+    "Cada célula é um dia: **linhas** = dia da semana, **colunas** = semanas. "
+    "**Cor mais escura = mais carga (TSS)** naquele dia. Passe o mouse para ver o valor."
+)
 
 daily = query(
     f"""
@@ -87,13 +91,17 @@ if not daily.empty and daily["daily_tss"].sum() > 0:
 
     fig = px.imshow(
         pivot.values,
-        labels=dict(x="Semana", y="", color="TSS"),
+        labels=dict(x="Semana de", y="Dia", color="TSS"),
         x=[d.strftime("%d/%m") for d in pivot.columns],
         y=weekday_labels,
         color_continuous_scale="Greens",
         aspect="auto",
     )
-    fig.update_layout(height=280, margin=dict(l=10, r=10, t=10, b=10))
+    fig.update_layout(
+        height=280,
+        margin=dict(l=10, r=10, t=10, b=10),
+        coloraxis_colorbar=dict(title="TSS"),
+    )
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Sem dados de carga no período.")
@@ -123,9 +131,9 @@ with col_left:
     st.dataframe(by_sport, hide_index=True, use_container_width=True)
 
 with col_right:
-    st.subheader("Volume por esporte (km)")
-    if not by_sport.empty and (by_sport["km"].fillna(0).sum() > 0):
-        fig_pie = px.pie(by_sport, names="esporte", values="km", hole=0.4)
+    st.subheader("Distribuição por esporte (atividades)")
+    if not by_sport.empty and by_sport["atividades"].sum() > 0:
+        fig_pie = px.pie(by_sport, names="esporte", values="atividades", hole=0.4)
         fig_pie.update_layout(
             height=300,
             margin=dict(l=10, r=10, t=10, b=10),
@@ -133,7 +141,7 @@ with col_right:
         )
         st.plotly_chart(fig_pie, use_container_width=True)
     else:
-        st.info("Sem distância no período.")
+        st.info("Sem atividades no período.")
 
 st.divider()
 
@@ -148,7 +156,7 @@ acts = query(
         round(f.distance_km, 2) as km,
         round(f.moving_time_s / 60.0, 0) as duracao_min,
         round(f.average_heartrate, 0) as fc_media,
-        round(f.r_tss, 0) as tss
+        round(coalesce(f.r_tss, f.hr_tss), 0) as tss
     from marts.fct_activity f
     join marts.dim_activity d using (activity_id)
     where {where_period}

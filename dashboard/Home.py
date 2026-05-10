@@ -75,7 +75,7 @@ last_acts = query(
         round(f.distance_km, 2) as km,
         round(f.moving_time_s / 60.0, 0) as duracao_min,
         round(f.average_heartrate, 0) as fc_media,
-        round(f.r_tss, 0) as tss
+        round(coalesce(f.r_tss, f.hr_tss), 0) as tss
     from marts.fct_activity f
     join marts.dim_activity d using (activity_id)
     order by f.start_date_local desc
