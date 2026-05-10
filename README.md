@@ -11,9 +11,10 @@ Sincroniza o histórico completo do Strava, aplica modelos de ciência do esport
 
 - Cache local SQLite com todo o histórico de atividades (backfill + sync incremental)
 - Métricas científicas calculadas localmente: TRIMP, hrTSS, CTL/ATL/TSB, zonas Friel, NGP, eficiência aeróbica, decoupling cardíaco
-- 13 tools MCP para o Claude analisar seus dados de treino via linguagem natural
+- 20 tools MCP para o Claude analisar seus dados de treino via linguagem natural
 - Risco de lesão baseado em ACWR e spikes de volume
-- Roadmap: predições de prova (Riegel/VDOT), clima (Open-Meteo), ML, narrativa gerada por LLM
+- Predições de prova (Riegel + VDOT), clustering de rotas (DBSCAN) e ranking de drivers de performance via Gradient Boosting
+- Narrativa estruturada de períodos e diagnóstico de platô para o LLM consumir como coach
 
 ## Arquitetura
 
