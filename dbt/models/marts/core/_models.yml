@@ -1,0 +1,162 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Dimensão de calendário cobrindo 2024-01-01 → 2030-12-31. Granularidade: 1 dia. Componentes ISO (week/year/dow) seguem padrão internacional (segunda = 1)."
+    columns:
+      - name: date
+        description: "Data. PK natural."
+        tests:
+          - not_null
+          - unique
+      - name: year
+        description: "Ano calendário (YYYY)."
+        tests:
+          - not_null
+      - name: quarter
+        description: "Trimestre 1-4."
+        tests:
+          - not_null
+      - name: month
+        description: "Mês 1-12."
+        tests:
+          - not_null
+      - name: month_name
+        description: "Nome do mês em inglês (default DuckDB)."
+      - name: day_of_month
+        description: "Dia do mês 1-31."
+      - name: iso_day_of_week
+        description: "Dia da semana ISO: 1 = segunda, 7 = domingo."
+        tests:
+          - not_null
+      - name: day_name
+        description: "Nome do dia da semana (inglês)."
+      - name: iso_week
+        description: "Semana ISO 1-53."
+        tests:
+          - not_null
+      - name: iso_year
+        description: "Ano ISO (pode diferir do year em viradas de ano)."
+      - name: iso_year_week
+        description: "Concatenação 'YYYY-Www' (ex: '2026-W19')."
+      - name: is_weekend
+        description: "Sábado ou domingo (ISO dow >= 6)."
+      - name: is_month_start
+        description: "Dia 1 do mês."
+      - name: is_month_end
+        description: "Último dia do mês."
+
+  - name: dim_activity
+    description: "Dimensão de atividade — atributos descritivos e flags. SCD tipo 1 (sobrescreve)."
+    columns:
+      - name: activity_id
+        description: "Strava activity ID. PK."
+        tests:
+          - not_null
+          - unique
+      - name: activity_name
+        description: "Nome livre dado pelo atleta no Strava."
+      - name: sport_type
+        description: "Categoria do esporte (vocabulário Strava). Acepted_values em staging."
+        tests:
+          - not_null
+      - name: workout_type
+        description: "Subtipo Strava: 0=default, 1=race, 2=long run, 3=workout."
+      - name: is_race
+        description: "Flag derivado: workout_type = 1."
+      - name: is_long_run_flagged
+        description: "Flag derivado: workout_type = 2. Note: 'flagged' explícito porque a definição de longão real é métrica (≥60min em Z1-Z2), não só metadado."
+      - name: is_workout_session
+        description: "Flag derivado: workout_type = 3."
+      - name: has_heartrate
+        description: "Atividade tem stream de FC."
+      - name: has_powermeter
+        description: "Atividade tem stream de potência."
+      - name: trainer
+        description: "Treino indoor (esteira / rolo)."
+      - name: commute
+        description: "Atividade marcada como deslocamento."
+      - name: manual
+        description: "Atividade inserida manualmente (sem GPS / sensores)."
+
+  - name: fct_activity
+    description: "Fato no grão de uma atividade. Junta atributos brutos + métricas analíticas. LEFT join em metrics: atividade sem cálculo ainda preserva a linha. count == count(stg_strava__activities)."
+    columns:
+      - name: activity_id
+        description: "FK para `dim_activity.activity_id` e PK do fato (1:1 com atividade)."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_activity')
+                field: activity_id
+      - name: date_key
+        description: "FK para `dim_date.date`. Derivado de `date(start_date_local)` — a perspectiva do treino é sempre o fuso local do atleta."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date
+      - name: start_date_utc
+        description: "Início em UTC. Use pra ordenação cronológica global."
+      - name: start_date_local
+        description: "Início no fuso local registrado."
+      - name: moving_time_s
+        description: "Tempo em movimento (s)."
+      - name: elapsed_time_s
+        description: "Tempo total decorrido (s), incluindo paradas."
+      - name: distance_m
+        description: "Distância (m). Pode estar inflada por GPS — cf. backlog 'Camada de Qualidade de Dados'."
+      - name: distance_km
+        description: "Distância (km), derivado."
+      - name: pace_s_per_km
+        description: "Pace em segundos por km, derivado de moving_time_s / distance_km. Null para distance = 0."
+      - name: average_heartrate
+        description: "FC média (bpm). Null se sem FC."
+      - name: trimp
+        description: "TRIMP Banister. Null se sem FC."
+      - name: aerobic_efficiency
+        description: "EF = NGP_mps / FC_média."
+      - name: decoupling_pct
+        description: "Aerobic decoupling Pa:HR (%) em corridas longas (≥60min)."
+      - name: r_tss
+        description: "Running TSS (Daniels-based, NGP)."
+      - name: hr_tss
+        description: "TSS baseado em FC."
+
+  - name: fct_daily_load
+    description: "Fato no grão de um dia. Roll-up de carga e volume. Série contínua: dias sem atividade entram com daily_tss=0 (compute-metrics garante)."
+    columns:
+      - name: date_key
+        description: "FK para `dim_date.date`. PK do fato."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date
+      - name: daily_tss
+        description: "Soma de TSS das atividades do dia. 0 em dias sem treino."
+        tests:
+          - not_null
+      - name: ctl
+        description: "Chronic Training Load (média exponencial 42d do TSS). Proxy de fitness."
+        tests:
+          - not_null
+      - name: atl
+        description: "Acute Training Load (média exponencial 7d do TSS). Proxy de fadiga."
+        tests:
+          - not_null
+      - name: tsb
+        description: "Training Stress Balance = CTL_ontem - ATL_ontem. Proxy de forma. Positivo = descansado, negativo = carregado."
+        tests:
+          - not_null
+      - name: n_activities
+        description: "Número de atividades realizadas no dia (qualquer esporte)."
+      - name: total_distance_km
+        description: "Distância total (km), derivado."
+      - name: total_moving_time_h
+        description: "Tempo em movimento (horas), derivado."
