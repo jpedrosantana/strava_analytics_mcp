@@ -12,3 +12,4 @@ dbt_packages/
 .claude/settings.local.json
 .mcp.json
 docs/ai_review/
+docs/PRODUCT_NOTES.md
