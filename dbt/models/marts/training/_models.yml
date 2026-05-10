@@ -1,0 +1,252 @@
+version: 2
+
+models:
+  - name: fct_weekly_summary
+    description: "Fato no grão de uma semana ISO. Agrega volume, carga e qualidade. Colunas `run_*` separam corrida do cross-training. CTL/ATL/TSB são snapshot do domingo (ou último dia disponível da semana corrente)."
+    columns:
+      - name: iso_year_week
+        description: "Chave natural (e.g. '2026-W19'). PK."
+        tests:
+          - not_null
+          - unique
+      - name: iso_year
+        description: "Ano ISO."
+        tests:
+          - not_null
+      - name: iso_week
+        description: "Número da semana ISO (1-53)."
+        tests:
+          - not_null
+      - name: week_start_date
+        description: "Segunda-feira da semana."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date
+      - name: week_end_date
+        description: "Domingo da semana."
+        tests:
+          - not_null
+      - name: n_activities
+        description: "Total de atividades (qualquer esporte) na semana."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+      - name: total_distance_km
+        description: "Distância total (km), todos os esportes."
+      - name: total_moving_time_h
+        description: "Tempo em movimento (horas), todos os esportes."
+      - name: total_tss
+        description: "Soma de coalesce(r_tss, hr_tss) das atividades. NULL apenas se todas as atividades da semana não tiverem TSS."
+      - name: n_runs
+        description: "Corridas (sport_type='Run')."
+        tests:
+          - not_null
+      - name: run_distance_km
+        description: "Distância de corrida (km). 0 se sem corrida."
+        tests:
+          - not_null
+      - name: run_moving_time_h
+        description: "Tempo de corrida (horas). 0 se sem corrida."
+      - name: run_tss
+        description: "TSS de corrida (coalesce r_tss/hr_tss). 0 se sem corrida."
+      - name: n_long_runs
+        description: "Corridas com moving_time_s >= 3600 (≥60min). Definição alinhada com compute_decoupling."
+        tests:
+          - not_null
+      - name: n_quality_sessions
+        description: "Corridas com (z4 + z5) >= 600s (≥10min em Z4-Z5). Proxy de sessão de intensidade."
+        tests:
+          - not_null
+      - name: ctl_end_of_week
+        description: "CTL no domingo (ou último dia disponível). Snapshot de fitness no fim da semana."
+      - name: atl_end_of_week
+        description: "ATL no domingo (ou último dia disponível)."
+      - name: tsb_end_of_week
+        description: "TSB no domingo. Positivo = descansado, negativo = carregado."
+
+  - name: fct_monthly_summary
+    description: "Fato no grão de mês calendário. Estrutura espelha fct_weekly_summary, mas agregado por (year, month). PK composta."
+    columns:
+      - name: year
+        description: "Ano calendário. Parte da PK."
+        tests:
+          - not_null
+      - name: month
+        description: "Mês 1-12. Parte da PK."
+        tests:
+          - not_null
+      - name: month_start_date
+        description: "Primeiro dia do mês."
+        tests:
+          - not_null
+      - name: month_end_date
+        description: "Último dia do mês."
+        tests:
+          - not_null
+      - name: n_activities
+        description: "Total de atividades no mês."
+        tests:
+          - not_null
+      - name: total_distance_km
+        description: "Distância total (km)."
+      - name: total_moving_time_h
+        description: "Tempo em movimento (horas)."
+      - name: total_tss
+        description: "Soma de TSS do mês."
+      - name: n_runs
+        description: "Corridas no mês."
+        tests:
+          - not_null
+      - name: run_distance_km
+        description: "Distância de corrida (km). 0 se sem corrida."
+        tests:
+          - not_null
+      - name: run_moving_time_h
+        description: "Tempo de corrida (horas)."
+      - name: run_tss
+        description: "TSS de corrida."
+      - name: n_long_runs
+        description: "Longões (corrida ≥60min) no mês."
+        tests:
+          - not_null
+      - name: n_quality_sessions
+        description: "Sessões com ≥10min em Z4+Z5."
+        tests:
+          - not_null
+      - name: ctl_end_of_month
+        description: "CTL no último dia disponível do mês."
+      - name: atl_end_of_month
+        description: "ATL no último dia disponível do mês."
+      - name: tsb_end_of_month
+        description: "TSB no último dia disponível do mês."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - year
+              - month
+
+  - name: fct_zone_distribution
+    description: "Distribuição de tempo em zonas Z1-Z5 por semana ISO. Wide. total_with_hr_seconds = soma das zonas; total_moving_seconds inclui atividades sem FC. Colunas `run_*` filtram só corrida."
+    columns:
+      - name: iso_year_week
+        description: "Chave natural. PK."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('fct_weekly_summary')
+                field: iso_year_week
+      - name: iso_year
+        description: "Ano ISO."
+      - name: iso_week
+        description: "Número da semana ISO."
+      - name: z1_seconds
+        description: "Tempo em Z1 (recuperação ativa). Todas as atividades. NULL = 0 (já coalesce na fonte)."
+      - name: z2_seconds
+        description: "Tempo em Z2 (endurance / aeróbico de base)."
+      - name: z3_seconds
+        description: "Tempo em Z3 (tempo / aeróbico de threshold inferior)."
+      - name: z4_seconds
+        description: "Tempo em Z4 (threshold / lactate threshold)."
+      - name: z5_seconds
+        description: "Tempo em Z5 (VO2max / anaeróbico)."
+      - name: total_with_hr_seconds
+        description: "Soma de z1..z5. Tempo total efetivamente classificado em zona."
+      - name: total_moving_seconds
+        description: "Tempo total em movimento, incluindo atividades sem FC. Maior ou igual a total_with_hr_seconds."
+      - name: run_z1_seconds
+        description: "Idem z1_seconds, filtrado para sport_type='Run'."
+      - name: run_z2_seconds
+        description: "Idem z2_seconds, filtrado para sport_type='Run'."
+      - name: run_z3_seconds
+        description: "Idem z3_seconds, filtrado para sport_type='Run'."
+      - name: run_z4_seconds
+        description: "Idem z4_seconds, filtrado para sport_type='Run'."
+      - name: run_z5_seconds
+        description: "Idem z5_seconds, filtrado para sport_type='Run'."
+      - name: run_total_with_hr_seconds
+        description: "Soma das zonas só de corrida."
+      - name: run_total_moving_seconds
+        description: "Tempo total de corrida em movimento (inclui corridas sem FC)."
+      - name: n_activities_with_hr
+        description: "Atividades da semana com stream de FC (z1_seconds não-null na fonte)."
+      - name: n_activities
+        description: "Total de atividades na semana."
+
+  - name: fct_long_runs
+    description: "Recorte de longões: sport_type='Run' AND moving_time_s ≥ 3600 (≥60min). Enriquecido com decoupling, NGP, EF e CTL/ATL/TSB do dia. Útil para responder 'longões estão piorando com a fadiga acumulada?'."
+    columns:
+      - name: activity_id
+        description: "FK para dim_activity. PK do fato (1:1 com atividade)."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_activity')
+                field: activity_id
+      - name: date_key
+        description: "FK para dim_date.date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date
+      - name: start_date_local
+        description: "Início do longão no fuso local."
+      - name: is_race
+        description: "Flag de prova (workout_type=1). Pode ser NULL se workout_type não populado."
+      - name: distance_km
+        description: "Distância (km). Sempre > 0 (filtro implícito do longão)."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"
+      - name: moving_time_s
+        description: "Tempo em movimento (s). Sempre ≥ 3600 por definição."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 3600"
+      - name: moving_time_h
+        description: "Tempo em movimento (h), derivado."
+      - name: pace_s_per_km
+        description: "Pace médio (s/km)."
+      - name: average_heartrate
+        description: "FC média (bpm). NULL se sem stream de FC."
+      - name: elevation_gain_m
+        description: "Ganho de elevação acumulado (m)."
+      - name: tss
+        description: "coalesce(r_tss, hr_tss). Hoje cai sempre no hr_tss porque r_tss=NULL — cf. backlog."
+      - name: aerobic_efficiency
+        description: "EF = NGP_mps / FC_média. NULL se faltar NGP ou FC."
+      - name: decoupling_pct
+        description: "Aerobic decoupling Pa:HR (%) — proxy de fadiga aeróbica."
+      - name: ngp_mps
+        description: "Normalized Graded Pace (m/s). NULL se sem stream."
+      - name: z1_seconds
+        description: "Tempo em Z1."
+      - name: z2_seconds
+        description: "Tempo em Z2."
+      - name: z3_seconds
+        description: "Tempo em Z3."
+      - name: z4_seconds
+        description: "Tempo em Z4."
+      - name: z5_seconds
+        description: "Tempo em Z5."
+      - name: ctl_on_date
+        description: "CTL no dia do longão. Quantifica fitness acumulado."
+      - name: atl_on_date
+        description: "ATL no dia. Quantifica fadiga recente."
+      - name: tsb_on_date
+        description: "TSB no dia. Forma do dia do longão."
