@@ -40,18 +40,24 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** o modelo de drivers passa a refletir o impacto real da temperatura no pace.
 
-### Detecção/correção de atividades com GPS corrompido
+### Camada de qualidade de dados (Data Quality Layer)
 
-**Problema:** atividades com erro de GPS (túneis, perda de sinal, drift em prédios altos) inflam `distance_m` e, por consequência, deflacionam o pace calculado como `distance/time`. Isso contamina toda a stack analítica: `total_distance_km` de períodos, `longest`/`fastest_run` em highlights, baseline de PRs, EF, predict_race_time e qualquer comparação histórica.
+**Problema:** múltiplas classes de erro nos streams entram direto nos cálculos sem qualquer defensivo. Auditoria da Fase 8 confirmou que o único filtro existente é `np.clip(grade, ±0.45)` em NGP e drop de HR=0 em EF — qualquer outro tipo de ruído contamina métricas downstream. Categorias relevantes:
 
-**Exemplo real:** meia maratona em 12/04/2026 registrou 23 km no Strava (kms 17–19 com pace zoado por túnel). A atividade aparece como `longest` + `fastest_run` + `highest_load` no `generate_period_narrative` das últimas 4 semanas, com pace de 5:09/km — que está artificialmente otimista, já que a distância real foi ~21,1 km.
+- **GPS inflado** (túneis, perda de sinal, drift): infla `distance_m` → pace artificialmente otimista, contamina PRs, EF, predict_race_time, comparações de período
+- **HR spikes** (cinta perdendo contato, interferência elétrica): valores ≥220 bpm entram em EF, decoupling e médias sem filtragem
+- **Stream gaps** (sensor pausado, falha de sync): segmentos sem dados distorcem médias móveis e cumulativos
+- **Pace impossível** (split de 2:30/km em terreno plano)
+- **Mismatch moving vs elapsed**: paradas longas inflam um sem afetar o outro
 
-**Soluções possíveis (a decidir quando priorizar):**
-- **Flag manual**: campo `data_quality` em `activities` (ex: `gps_corrupt`, `race_official_distance`) que o usuário marca em atividades específicas. Analytics filtram ou ajustam baseado no flag.
-- **Detector automático**: heurísticas sobre os streams — variação anômala entre splits adjacentes, gap suspeito entre `moving_time` e `elapsed_time`, jump de altitude/lat-lng. Marcar `data_quality` automaticamente.
-- **Distância oficial em provas**: quando atividade tem `workout_type=race` (ou tag manual), permitir sobrescrita da distância pelo valor oficial (5K, 10K, 21,0975, 42,195). Pace é recalculado.
+**Exemplo real:** meia maratona em 12/04/2026 registrou 23 km no Strava (kms 17–19 com pace inconsistente por perda de sinal em túnel). Aparece como `longest` + `fastest_run` + `highest_load` no `generate_period_narrative` das últimas 4 semanas, com pace de 5:09/km — artificialmente otimista (distância real ≈ 21,1 km).
 
-**Impacto:** highlights, PRs e médias de período deixam de ser contaminados por dados ruins. Particularmente importante para provas, onde o erro tende a vir junto com a sessão de maior carga e maior intensidade do período.
+**Solução proposta (camada com 3 frentes complementares):**
+- **Flag manual**: campo `data_quality` em `activities` (`gps_corrupt`, `hr_corrupt`, `race_official_distance` etc.) marcado pelo usuário; analytics filtram ou ajustam
+- **Detector automático**: heurísticas em batch sobre streams — variação anômala entre splits adjacentes, gap entre `moving_time` e `elapsed_time`, jump de altitude/lat-lng, FC fora de [30, 220], pace fora de [2:30, 12:00]/km. Marcar `data_quality` automaticamente
+- **Distância oficial em provas**: quando atividade tem `workout_type=race`, permitir sobrescrita por valor oficial (5K, 10K, 21,0975, 42,195) e recalcular pace
+
+**Impacto:** highlights, PRs, EF, decoupling, predict_race_time deixam de ser contaminados. Especialmente importante em provas, onde o erro coincide com a sessão de maior carga e intensidade do período.
 
 ### Inferência de cidade em `get_route_clusters`
 
@@ -64,6 +70,75 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 - **Reverse geocoding via Nominatim/OSM**: cobertura mundial, gratuito mas com rate limit (1 req/s) e latência. Bom candidato para cache local por (lat, lng) arredondado.
 
 **Impacto:** clusters passam a ter um `city` ou `location_label` legível, e atividades em viagens (mesmo isoladas) podem ser agrupadas por cidade em vez de descartadas como ruído do DBSCAN.
+
+### `compare_cycles()` — comparar ciclo atual com ciclo de prova anterior
+
+**Problema:** atualmente é trabalhoso comparar a janela de preparação atual com ciclos passados que terminaram em meias bem-sucedidas. O usuário precisa montar manualmente as datas e cruzar `get_period_stats`, `get_load_history` e `get_aerobic_efficiency_trend`.
+
+**Solução proposta:** tool `compare_cycles(reference_race_id, current_window_days=84)` que:
+- Identifica o ciclo da prova de referência (ex.: 12 semanas antes da data da prova)
+- Define a janela atual (mesmos N dias contados de hoje para trás)
+- Retorna comparação lado a lado: km totais, distribuição por zona, picos de CTL/ATL, número de longões, decoupling médio, sessões de quality (Z4-Z5)
+
+**Impacto:** responde diretamente "estou treinando melhor que para a meia X?" — útil na calibração da maratona contra o melhor ciclo anterior.
+
+### Validação cruzada do `what_drives_my_performance`
+
+**Problema:** com poucas atividades e features correlacionadas, gradient boosting pode reportar feature importance instável (overfitting). Não há diagnóstico atual confirmando que as importâncias são robustas.
+
+**Solução proposta:**
+- Cross-validation 5-fold reportando R² médio e desvio
+- Comparar top features do GB com Spearman correlation simples — divergência forte sinaliza overfitting
+- Expor metadado `confidence: low|medium|high` na resposta da tool (baseado em N atividades, R² CV, estabilidade do ranking)
+
+**Impacto:** tool deixa de "vender" insights frágeis; LLM tem sinal explícito para moderar interpretação quando o modelo está pouco confiável.
+
+---
+
+## Arquitetura e MCP
+
+### Envelope padronizado para tools MCP
+
+**Problema:** cada tool retorna estrutura própria, sem campos meta padronizados (warnings, confidence, units, status). LLM consumidor lida com formatos heterogêneos e não tem canal padrão para sinalizar "este resultado tem ressalvas".
+
+**Solução proposta:** wrapper de retorno comum, aplicado via decorator em `mcp_server/server.py`:
+```json
+{
+  "status": "ok | warning | empty",
+  "data": { ... payload específico da tool },
+  "warnings": ["dado parcial: 8 dias sem stream", ...],
+  "confidence": "low | medium | high",
+  "units": { "distance": "km", "pace": "/km" }
+}
+```
+Retrocompatível: o campo `data` preserva o payload anterior.
+
+**Impacto:** LLM propaga warnings e confidence de forma consistente; tool calls mais auditáveis.
+
+### Versões `summary`/`detailed` em tools narrativas
+
+**Problema:** `generate_period_narrative` e `what_drives_my_performance` retornam payload grande que pode estourar contexto em períodos longos ou modelos de janela menor.
+
+**Solução proposta:** parâmetro `detail_level: "summary" | "detailed"` (default: `"detailed"` para preservar comportamento atual):
+- `summary`: estatísticas agregadas + top 1 highlight + concerns
+- `detailed`: payload completo
+
+**Impacto:** ergonomia em conversas longas; granularidade escolhida conforme a pergunta.
+
+### Reorganização de `analytics/` em sub-pastas
+
+**Problema:** o módulo mistura granularidades — métricas determinísticas (`load`, `ngp`, `efficiency`, `zones`), feature engineering, modelos preditivos (`anomalies`, `performance_drivers`, `plateau`, `race_prediction`) e diagnostics (`injury_risk`, `narrative`).
+
+**Solução proposta:**
+```
+analytics/
+  metrics/      → load, ngp, efficiency, zones
+  features/     → extração de features para modelos
+  models/       → anomalies, performance_drivers, race_prediction, plateau
+  diagnostics/  → injury_risk, narrative
+```
+
+**Impacto:** apenas organizacional. Sem ganho funcional imediato — fazer só quando a navegação ficar dolorosa.
 
 ---
 

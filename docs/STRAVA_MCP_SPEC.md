@@ -677,34 +677,34 @@ Cada fase tem critério de aceitação claro. **Implementar fase a fase, não pu
 **Contexto:** após a Fase 7, o projeto passou por revisões externas que convergiram em pontos relacionados a qualidade da série temporal, clareza arquitetural e mensurabilidade dos critérios de polish. Esta fase consolida implementação, verificação e expansão do backlog em uma única passagem antes da Fase 9.
 
 **Implementação (entregar):**
-- [ ] Diagrama de arquitetura no README (Mermaid: `setup → sync → compute-metrics → serve → Claude`)
-- [ ] `docs/TROUBLESHOOTING.md` com cenários: OAuth expirado, 429 da Strava API, sync interrompido no meio, gaps de stream, reset do banco
-- [ ] Reescrever os critérios da Fase 9 de forma mensurável no próprio SPEC (badges, ≥3 screenshots, link de post publicado, etc.)
+- [x] Diagrama de arquitetura no README (Mermaid: `setup → sync → compute-metrics → serve → Claude`)
+- [x] `docs/TROUBLESHOOTING.md` com cenários: OAuth expirado, 429 da Strava API, sync interrompido no meio, gaps de stream, reset do banco
+- [x] Reescrever os critérios da Fase 9 de forma mensurável no próprio SPEC (badges, ≥3 screenshots, link de post publicado, etc.)
 
 **Verificação (auditoria do código atual; corrigir e anotar no commit se houver gap):**
-- [ ] CTL/ATL/TSB tratam dias sem atividade como TSS=0? Se não, decay quebra em períodos de descanso/lesão
-- [ ] Existe cache persistente para Open-Meteo? Backfill de 2 anos sem cache esgota rate limit
-- [ ] Há sanitização atual de FC spikes ou GPS jumps no `compute-metrics`?
+- [x] CTL/ATL/TSB tratam dias sem atividade como TSS=0? **OK** — `analytics/load.py:build_daily_load` reindexa pd.date_range contínuo e `fillna(0.0)`; `sync/compute_metrics.py:197-200` constrói série contínua entre primeira e última atividade
+- [x] Existe cache persistente para Open-Meteo? **N/A** — integração não implementada (ADR 0002 posterga a feature); cache só é relevante quando o backfill climático existir
+- [x] Há sanitização atual de FC spikes ou GPS jumps no `compute-metrics`? **GAP** — único defensivo é `np.clip(grade, -0.45, 0.45)` em NGP e drop de HR=0 em EF; correção completa absorvida pelo item "Data Quality Layer" do backlog
 
 **Expansão do backlog (registrar em `docs/BACKLOG.md`, sem implementar):**
-- [ ] **Data Quality Layer** — expandir o item de GPS corrompido para englobar HR spikes, gaps de stream, pace impossível, mismatch moving vs elapsed time
-- [ ] `compare_cycles()` — tool comparando ciclo atual com melhor meia anterior
-- [ ] Versões `summary`/`detailed` em `generate_period_narrative` e `what_drives_my_performance`
-- [ ] Schemas MCP padronizados (envelope `{status, data, warnings, confidence}`)
-- [ ] Cross-validation + Spearman para validar `what_drives_my_performance`
-- [ ] Reorganização de `analytics/` em sub-pastas (`features/`, `metrics/`, `models/`, `diagnostics/`)
+- [x] **Data Quality Layer** — expandir o item de GPS corrompido para englobar HR spikes, gaps de stream, pace impossível, mismatch moving vs elapsed time
+- [x] `compare_cycles()` — tool comparando ciclo atual com melhor meia anterior
+- [x] Versões `summary`/`detailed` em `generate_period_narrative` e `what_drives_my_performance`
+- [x] Schemas MCP padronizados (envelope `{status, data, warnings, confidence}`)
+- [x] Cross-validation + Spearman para validar `what_drives_my_performance`
+- [x] Reorganização de `analytics/` em sub-pastas (`features/`, `metrics/`, `models/`, `diagnostics/`)
 
 **Aceitação:** README com diagrama legível; `TROUBLESHOOTING.md` cobrindo ≥4 cenários; checklist da Fase 9 reescrito de forma mensurável; cada item de Verificação fechado (correção implementada com nota no commit, ou commit explicando que não há gap); `BACKLOG.md` expandido com os 6 itens acima.
 
 ### Fase 9 — Polish e portfólio (objetivo: projeto público forte)
 
-- [ ] README profissional: diagrama de arquitetura, screenshots de conversas reais, lista de análises, instruções claras de setup
-- [ ] Notebook Jupyter de exemplo (`examples/exploration.ipynb`) que exercita as funções de analytics fora do MCP
-- [ ] GitHub Actions: sync diário automatizado (opcional, para o autor)
-- [ ] Post de blog/LinkedIn descrevendo arquitetura e aprendizados
-- [ ] Licença MIT, CONTRIBUTING.md, CODE_OF_CONDUCT.md
+- [ ] README com badges (build, license, Python version), ≥3 screenshots de conversas reais com Claude, seção "Análises possíveis" com ≥10 prompts-exemplo (diagrama de arquitetura já entregue na Fase 8)
+- [ ] Notebook Jupyter `examples/exploration.ipynb` com ≥5 células executadas demonstrando uso direto das funções de analytics (sem MCP), com saídas visíveis
+- [ ] GitHub Actions com workflow agendado (cron diário) executando `sync` + `compute-metrics`; badge de status no README
+- [ ] Post de blog ou LinkedIn publicado (≥800 palavras) sobre arquitetura, aprendizados e ≥1 insight real extraído pelo próprio autor; link adicionado ao README
+- [ ] LICENSE (MIT), CONTRIBUTING.md (rodar local, padrão de commits, abertura de PR) e CODE_OF_CONDUCT.md
 
-**Aceitação:** repo público apresentável; alguém estranho ao projeto consegue rodar tudo seguindo o README.
+**Aceitação:** todos os itens acima marcados; setup do README validado por ≥1 pessoa fora do projeto, completando com sucesso o caminho do clone até a primeira pergunta respondida no Claude.
 
 ---
 

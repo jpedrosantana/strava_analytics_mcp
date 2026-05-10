@@ -11,6 +11,33 @@ Sincroniza o histórico completo do Strava, aplica modelos de ciência do esport
 - Risco de lesão baseado em ACWR e spikes de volume
 - Roadmap: predições de prova (Riegel/VDOT), clima (Open-Meteo), ML, narrativa gerada por LLM
 
+## Arquitetura
+
+```mermaid
+flowchart LR
+    Strava[(Strava API)]
+    Claude[Claude / MCP Client]
+    DB[(SQLite<br/>data/strava.db)]
+
+    subgraph pipeline["uv run strava-mcp ..."]
+        direction LR
+        Setup[setup]
+        Sync[sync]
+        Compute[compute-metrics]
+        Serve[serve]
+    end
+
+    Strava <-.->|OAuth| Setup
+    Strava -->|activities,<br/>streams| Sync
+    Sync --> DB
+    DB --> Compute
+    Compute -->|TRIMP, CTL/ATL/TSB,<br/>zonas, EF, decoupling| DB
+    DB --> Serve
+    Serve <-->|MCP tools| Claude
+```
+
+`setup` faz o handshake OAuth uma única vez. `sync` baixa atividades e streams da Strava para o SQLite local. `compute-metrics` lê o banco, calcula as métricas científicas e grava de volta. `serve` expõe o banco como tools MCP para qualquer cliente compatível.
+
 ## Pré-requisitos
 
 - Python 3.11+
@@ -119,6 +146,7 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 
 - [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
 - [Exemplos de System Prompts para Modo Coach](docs/COACH_PROMPTS.md) — templates para usar o MCP como treinador pessoal
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — OAuth, rate limit, sync interrompido, gaps de stream, reset do banco
 
 ## Roadmap
 
@@ -132,7 +160,8 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 5 | Predições (Riegel, VDOT); clima opcional ([ADR 0002](docs/decisions/0002-weather-integration-optional.md)) | ✅ |
 | 6 | ML e análises avançadas (anomalies, clustering, performance drivers) | ✅ |
 | 7 | Narrativa e diagnóstico (period narrative, plateau diagnosis, coach prompts) | ✅ |
-| 8 | Polish e portfólio | — |
+| 8 | Ajustes finos pós-review (diagrama, troubleshooting, auditoria, expansão do backlog) | ✅ |
+| 9 | Polish e portfólio | — |
 
 ## Stack
 
