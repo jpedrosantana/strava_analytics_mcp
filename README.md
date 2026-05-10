@@ -42,6 +42,10 @@ flowchart LR
 
 `setup` faz o handshake OAuth uma única vez. `sync` baixa atividades e streams da Strava para o SQLite local. `compute-metrics` lê o banco, calcula as métricas científicas e grava de volta. `serve` expõe o banco como tools MCP para qualquer cliente compatível.
 
+## Aviso de uso
+
+Este é um projeto pessoal e exploratório. As métricas e diagnósticos (TRIMP, CTL/ATL/TSB, eficiência aeróbica, VDOT, predições de prova, risco de lesão) vêm de modelos heurísticos consagrados na literatura de ciência do esporte — coeficientes derivados de médias populacionais, não de avaliação laboratorial individual. Os resultados servem como apoio à decisão de treino e visibilidade do progresso, **não substituem treinador, profissional de educação física ou médico do esporte**. Mudanças de carga, suspeita de lesão ou prescrição de prova devem ser discutidas com um profissional.
+
 ## Pré-requisitos
 
 - Python 3.11+
