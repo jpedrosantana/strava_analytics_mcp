@@ -2,11 +2,21 @@
 
 Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizadas no roadmap principal. Cada item descreve **o que**, **por que** e **como** poderia ser resolvido.
 
+## Convenção de prioridade
+
+Cada item é taggeado no título com uma das seguintes prioridades:
+
+- **[Alta]** — bloqueia ou afeta diretamente algo já no roadmap (D1-D7 / Fase 10) ou contamina narrativa pública. Tem prazo implícito.
+- **[Média]** — melhoria com impacto demonstrado, mas pode rodar em paralelo sem cravar timeline.
+- **[Baixa]** — ergonomia, organização interna, ou domínio fora de trabalho atual. Entra quando virar incômodo.
+
+Itens **[Alta]** já agendados em um roadmap em execução trazem nota explícita ao fim do bloco apontando para a fase em que entrarão.
+
 ---
 
 ## Analytics
 
-### Best efforts via streams em `find_personal_records`
+### [Alta] Best efforts via streams em `find_personal_records`
 
 **Problema:** o cálculo atual considera apenas a distância **total** da atividade, dentro de uma janela de [target × 0,98, target × 1,05]. Isso exclui melhores esforços contidos dentro de corridas mais longas.
 
@@ -20,7 +30,9 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** PRs verdadeiros, captura de "bombadas" dentro de longões, base mais sólida para predições.
 
-### Features de elevação mais ricas em `find_anomalies`
+> **Status:** agendado para execução antes da Fase D4 (roadmap de dados, spec §12.8). Mart `fct_pr_efforts` consome o resultado.
+
+### [Média] Features de elevação mais ricas em `find_anomalies`
 
 **Problema:** a feature de inclinação no modelo de anomalias é apenas `elevation_gain_m / distance_m`, que perde informação importante quando o trajeto tem perfil assimétrico (descida + subida pesada).
 
@@ -32,7 +44,7 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** menos falsos positivos em trajetos com perfil acidentado, classificação mais justa de "rotas duras" vs. "dia ruim".
 
-### Extrair `average_temp` do `raw_json` para coluna própria
+### [Alta] Extrair `average_temp` do `raw_json` para coluna própria
 
 **Problema:** o `what_drives_my_performance` consulta `activity_metrics.weather_temp_c`, que está sempre nulo (nunca populamos esse campo). Resultado: a feature de temperatura tem importância ~0 no modelo, mesmo que ~41% das atividades tenham temperatura no `raw_json` do Strava.
 
@@ -40,7 +52,9 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** o modelo de drivers passa a refletir o impacto real da temperatura no pace.
 
-### Camada de qualidade de dados (Data Quality Layer)
+> **Status:** agendado para execução antes da Fase D4 (roadmap de dados, spec §12.8). Mart `fct_race_performance` consome a coluna populada.
+
+### [Média] Camada de qualidade de dados (Data Quality Layer)
 
 **Problema:** múltiplas classes de erro nos streams entram direto nos cálculos sem qualquer defensivo. Auditoria da Fase 8 confirmou que o único filtro existente é `np.clip(grade, ±0.45)` em NGP e drop de HR=0 em EF — qualquer outro tipo de ruído contamina métricas downstream. Categorias relevantes:
 
@@ -59,7 +73,7 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** highlights, PRs, EF, decoupling, predict_race_time deixam de ser contaminados. Especialmente importante em provas, onde o erro coincide com a sessão de maior carga e intensidade do período.
 
-### Inferência de cidade em `get_route_clusters`
+### [Baixa] Inferência de cidade em `get_route_clusters`
 
 **Problema:** os clusters retornam apenas `centroid_lat` / `centroid_lng`. Não há tradução automática para nome de cidade — para descobrir que (-22,99, -43,22) é Rio de Janeiro, o usuário/LLM precisa cruzar com o nome da atividade ou ter conhecimento prévio de coordenadas.
 
@@ -71,7 +85,7 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** clusters passam a ter um `city` ou `location_label` legível, e atividades em viagens (mesmo isoladas) podem ser agrupadas por cidade em vez de descartadas como ruído do DBSCAN.
 
-### `compare_cycles()` — comparar ciclo atual com ciclo de prova anterior
+### [Média] `compare_cycles()` — comparar ciclo atual com ciclo de prova anterior
 
 **Problema:** atualmente é trabalhoso comparar a janela de preparação atual com ciclos passados que terminaram em meias bem-sucedidas. O usuário precisa montar manualmente as datas e cruzar `get_period_stats`, `get_load_history` e `get_aerobic_efficiency_trend`.
 
@@ -82,7 +96,7 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 **Impacto:** responde diretamente "estou treinando melhor que para a meia X?" — útil na calibração da maratona contra o melhor ciclo anterior.
 
-### Validação cruzada do `what_drives_my_performance`
+### [Média] Validação cruzada do `what_drives_my_performance`
 
 **Problema:** com poucas atividades e features correlacionadas, gradient boosting pode reportar feature importance instável (overfitting). Não há diagnóstico atual confirmando que as importâncias são robustas.
 
@@ -97,7 +111,7 @@ Ideias e melhorias identificadas durante o uso do sistema, ainda não priorizada
 
 ## Arquitetura e MCP
 
-### Envelope padronizado para tools MCP
+### [Média] Envelope padronizado para tools MCP
 
 **Problema:** cada tool retorna estrutura própria, sem campos meta padronizados (warnings, confidence, units, status). LLM consumidor lida com formatos heterogêneos e não tem canal padrão para sinalizar "este resultado tem ressalvas".
 
@@ -115,7 +129,7 @@ Retrocompatível: o campo `data` preserva o payload anterior.
 
 **Impacto:** LLM propaga warnings e confidence de forma consistente; tool calls mais auditáveis.
 
-### Versões `summary`/`detailed` em tools narrativas
+### [Baixa] Versões `summary`/`detailed` em tools narrativas
 
 **Problema:** `generate_period_narrative` e `what_drives_my_performance` retornam payload grande que pode estourar contexto em períodos longos ou modelos de janela menor.
 
@@ -125,7 +139,7 @@ Retrocompatível: o campo `data` preserva o payload anterior.
 
 **Impacto:** ergonomia em conversas longas; granularidade escolhida conforme a pergunta.
 
-### Reorganização de `analytics/` em sub-pastas
+### [Baixa] Reorganização de `analytics/` em sub-pastas
 
 **Problema:** o módulo mistura granularidades — métricas determinísticas (`load`, `ngp`, `efficiency`, `zones`), feature engineering, modelos preditivos (`anomalies`, `performance_drivers`, `plateau`, `race_prediction`) e diagnostics (`injury_risk`, `narrative`).
 
@@ -144,7 +158,7 @@ analytics/
 
 ## Sincronização
 
-### Pipeline pós-sync automático
+### [Baixa] Pipeline pós-sync automático
 
 **Problema:** após `sync_now`, é necessário rodar manualmente `sync --streams` e `compute-metrics`. Atividades novas ficam sem métricas computadas até o usuário rodar os comandos.
 
@@ -154,7 +168,7 @@ analytics/
 
 ## Dados climáticos
 
-### Integração com Open-Meteo (opcional)
+### [Baixa] Integração com Open-Meteo (opcional)
 
 Decisão atual em [ADR 0002](decisions/0002-weather-integration-optional.md): postergada. Reavaliar se a análise de impacto climático ganhar prioridade. Nesse caso, o approach seria usar Open-Meteo apenas como fallback para atividades sem `average_temp` no `raw_json` do Strava.
 
@@ -163,5 +177,6 @@ Decisão atual em [ADR 0002](decisions/0002-weather-integration-optional.md): po
 ## Convenções
 
 - Itens descritos aqui são **não comprometidos** — viram trabalho só após decisão explícita
+- Cada item carrega tag de prioridade no título (`[Alta]`, `[Média]`, `[Baixa]`) conforme rubric no início do arquivo. Reavaliar quando algo mudar de fase
 - Quando um item entra em execução, mover para o roadmap principal (`docs/STRAVA_MCP_SPEC.md`) ou criar ADR específico
 - Se uma melhoria for decidida e descartada, mover para o final como histórico
