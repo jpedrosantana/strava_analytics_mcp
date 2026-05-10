@@ -161,7 +161,8 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 6 | ML e análises avançadas (anomalies, clustering, performance drivers) | ✅ |
 | 7 | Narrativa e diagnóstico (period narrative, plateau diagnosis, coach prompts) | ✅ |
 | 8 | Ajustes finos pós-review (diagrama, troubleshooting, auditoria, expansão do backlog) | ✅ |
-| 9 | Polish e portfólio | — |
+| 9 | Polish e portfólio (README, notebook, CI, governança) | — |
+| 10 | Conteúdo público (post conectando MCP + projeto de BI) | — |
 
 ## Stack
 
