@@ -876,8 +876,10 @@ Isso transforma o projeto de "MCP server pessoal" em "**plataforma de dados espo
 
 ### 12.2 Stack proposta (otimizada para rodar localmente)
 
+> **Atualizado por [ADR 0004](decisions/0004-data-layer-duckdb-and-sequencing.md):** o warehouse analítico é **DuckDB** (`dbt-duckdb`), não SQLite. SQLite continua como operational store do MCP; DuckDB lê dele via extension `sqlite_scanner` e materializa os marts em `data/strava.duckdb`. Esta seção mantém a recomendação original como histórico — ver ADR para racional.
+
 ```
-SQLite (raw)  ──> dbt ──> SQLite (analytics) ──> Streamlit
+SQLite (raw)  ──> dbt ──> DuckDB (analytics) ──> Streamlit
                   │
                   └──> testes, docs, lineage
 ```
@@ -1044,6 +1046,8 @@ dashboard/
 Essa página por si só justifica o projeto e gera bons screenshots para LinkedIn.
 
 ### 12.8 Roadmap da camada de dados (paralelo às fases principais)
+
+> **Atualizado por [ADR 0004](decisions/0004-data-layer-duckdb-and-sequencing.md):** a ordem de execução em vigor é **D1 → D2 → D5 (páginas 1-2) → D3 → D5 (página 3) → [Backlog: best-efforts + average_temp] → D4 → D6 → D7** (não linear). Os critérios de aceitação de cada fase abaixo continuam válidos — apenas o sequenciamento mudou para entregar dashboard utilizável mais cedo. Ver ADR para racional.
 
 #### Fase D1 — Setup dbt (após Fase 2 do roadmap principal)
 
