@@ -2,10 +2,10 @@
 
 # Paleta semântica para TSB (Training Stress Balance / forma).
 # Interpretação clássica do PMC chart.
-TSB_FRESH = "#10b981"        # > +5: descansado / forma de prova
-TSB_PRODUCTIVE = "#9ca3af"   # -10 a +5: produtivo, treinando bem
-TSB_LOADED = "#f59e0b"       # -30 a -10: carregado
-TSB_RISK = "#ef4444"         # < -30: risco / deload sugerido
+TSB_FRESH = "#10b981"  # > +5: descansado / forma de prova
+TSB_PRODUCTIVE = "#9ca3af"  # -10 a +5: produtivo, treinando bem
+TSB_LOADED = "#f59e0b"  # -30 a -10: carregado
+TSB_RISK = "#ef4444"  # < -30: risco / deload sugerido
 
 TSB_FRESH_THRESHOLD = 5
 TSB_PRODUCTIVE_THRESHOLD = -10

@@ -70,11 +70,7 @@ st.caption(
     "é a forma do dia: positivo = descansado, negativo = carregado."
 )
 
-where_pmc = (
-    f"date_key >= current_date - interval {period_days} day"
-    if period_days
-    else "1=1"
-)
+where_pmc = f"date_key >= current_date - interval {period_days} day" if period_days else "1=1"
 
 pmc = query(
     f"""

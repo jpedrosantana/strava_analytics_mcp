@@ -75,16 +75,18 @@ daily = query(
 if not daily.empty and daily["daily_tss"].sum() > 0:
     daily["date_key"] = pd.to_datetime(daily["date_key"])
     daily["weekday_num"] = daily["date_key"].dt.weekday  # 0=Mon
-    daily["week_start"] = daily["date_key"] - pd.to_timedelta(
-        daily["weekday_num"], unit="d"
-    )
+    daily["week_start"] = daily["date_key"] - pd.to_timedelta(daily["weekday_num"], unit="d")
 
-    pivot = daily.pivot_table(
-        index="weekday_num",
-        columns="week_start",
-        values="daily_tss",
-        aggfunc="sum",
-    ).reindex(range(7)).fillna(0)
+    pivot = (
+        daily.pivot_table(
+            index="weekday_num",
+            columns="week_start",
+            values="daily_tss",
+            aggfunc="sum",
+        )
+        .reindex(range(7))
+        .fillna(0)
+    )
 
     weekday_labels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
 
