@@ -134,9 +134,15 @@ Conversas reais com o Claude usando o MCP — capturas reais do projeto em uso:
 
 ![Análise da semana](docs/screenshots/weekly-analysis.png)
 
+[Ver conversa completa →](docs/conversations/weekly-analysis.md)
+
 ![Diagnóstico de forma e prontidão](docs/screenshots/form-diagnosis.png)
 
+[Ver conversa completa →](docs/conversations/form-diagnosis.md)
+
 ![Predição de prova e progresso da preparação](docs/screenshots/race-prediction.png)
+
+[Ver conversa completa →](docs/conversations/race-prediction.md)
 
 ## Tools MCP disponíveis
 
