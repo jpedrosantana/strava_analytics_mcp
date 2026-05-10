@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: strava_raw
+    description: "Operational SQLite store populated by the MCP sync pipeline. Attached read-only via DuckDB sqlite_scanner."
+    database: strava_raw
+    schema: main
+    tables:
+      - name: activities
+        description: "One row per Strava activity (run, ride, swim, etc.)."
+        columns:
+          - name: id
+            description: "Strava activity ID."
+            tests:
+              - not_null
+              - unique
+      - name: activity_metrics
+        description: "Computed sports-science metrics per activity (TRIMP, hrTSS, EF, decoupling, zones)."
+        columns:
+          - name: activity_id
+            description: "FK to activities.id."
+            tests:
+              - not_null
+              - unique
+              - relationships:
+                  arguments:
+                    to: source('strava_raw', 'activities')
+                    field: id
+      - name: daily_metrics
+        description: "Daily roll-up of training load (CTL/ATL/TSB) and volume."
+        columns:
+          - name: date
+            description: "Calendar date (UTC)."
+            tests:
+              - not_null
+              - unique
