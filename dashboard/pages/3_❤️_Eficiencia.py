@@ -150,9 +150,7 @@ c3.metric(
 
 nq_cur = cards["nq_cur"]
 nq_prev = cards["nq_prev"]
-nq_delta = (
-    f"{int(nq_cur - nq_prev):+d}" if pd.notna(nq_cur) and pd.notna(nq_prev) else None
-)
+nq_delta = f"{int(nq_cur - nq_prev):+d}" if pd.notna(nq_cur) and pd.notna(nq_prev) else None
 c4.metric(
     "Sessões de quality",
     f"{int(nq_cur) if pd.notna(nq_cur) else 0}",
@@ -170,9 +168,7 @@ st.caption(
     "ascendente significa que o motor aeróbico está melhorando."
 )
 
-where_period = (
-    f"f.date_key >= current_date - interval {period_days} day" if period_days else "1=1"
-)
+where_period = f"f.date_key >= current_date - interval {period_days} day" if period_days else "1=1"
 
 ef_df = query(
     f"""
@@ -203,9 +199,7 @@ if not ef_df.empty:
             mode="markers",
             name="EF por corrida",
             marker=dict(color="#2563eb", size=7, opacity=0.55),
-            hovertemplate=(
-                "%{x|%d %b %Y}<br>EF: %{y:.2f}<br>km: %{customdata:.1f}<extra></extra>"
-            ),
+            hovertemplate=("%{x|%d %b %Y}<br>EF: %{y:.2f}<br>km: %{customdata:.1f}<extra></extra>"),
             customdata=ef_df["distance_km"],
         )
     )
@@ -253,7 +247,7 @@ dec_df = query(
         tsb_on_date
     from marts.fct_long_runs
     where decoupling_pct is not null
-      and {where_period.replace('f.date_key', 'date_key')}
+      and {where_period.replace("f.date_key", "date_key")}
     order by date_key
     """
 )
@@ -264,24 +258,27 @@ if not dec_df.empty:
         lambda s: f"{int(s // 60)}:{int(s % 60):02d}/km" if pd.notna(s) else "—"
     )
     dec_df["dec_ma"] = (
-        dec_df.set_index("date_key")["decoupling_pct"]
-        .rolling("56D", min_periods=2)
-        .mean()
-        .values
+        dec_df.set_index("date_key")["decoupling_pct"].rolling("56D", min_periods=2).mean().values
     )
 
     fig_dec = go.Figure()
 
     # Bandas semânticas
     fig_dec.add_hrect(
-        y0=-30, y1=5,
-        fillcolor="rgba(16,185,129,0.10)", line_width=0,
-        annotation_text="saudável (≤5%)", annotation_position="bottom right",
+        y0=-30,
+        y1=5,
+        fillcolor="rgba(16,185,129,0.10)",
+        line_width=0,
+        annotation_text="saudável (≤5%)",
+        annotation_position="bottom right",
     )
     fig_dec.add_hrect(
-        y0=10, y1=40,
-        fillcolor="rgba(239,68,68,0.10)", line_width=0,
-        annotation_text="alerta (>10%)", annotation_position="top right",
+        y0=10,
+        y1=40,
+        fillcolor="rgba(239,68,68,0.10)",
+        line_width=0,
+        annotation_text="alerta (>10%)",
+        annotation_position="top right",
     )
 
     fig_dec.add_trace(
@@ -351,9 +348,7 @@ run_prefix = "run_" if scope == "Só corrida" else ""
 
 # Para o filtro de período no semanal, uso o week_start_date do dim_date via subquery
 where_week = (
-    f"week_start_date >= current_date - interval {period_days} day"
-    if period_days
-    else "1=1"
+    f"week_start_date >= current_date - interval {period_days} day" if period_days else "1=1"
 )
 
 zones_df = query(
@@ -380,8 +375,9 @@ if not zones_df.empty and zones_df["total_hr"].sum() > 0:
     zones_df["week_end_date"] = pd.to_datetime(zones_df["week_end_date"])
     # Rótulo do eixo X cobrindo o intervalo da semana ISO (ex: "04–10 mai")
     zones_df["week_label"] = zones_df.apply(
-        lambda r: f"{r['week_start_date'].strftime('%d')}–"
-        f"{r['week_end_date'].strftime('%d %b').lower()}",
+        lambda r: (
+            f"{r['week_start_date'].strftime('%d')}–{r['week_end_date'].strftime('%d %b').lower()}"
+        ),
         axis=1,
     )
 
@@ -392,9 +388,7 @@ if not zones_df.empty and zones_df["total_hr"].sum() > 0:
         var_name="zone",
         value_name="seconds",
     )
-    long_df["pct"] = (long_df["seconds"] / long_df["total_hr"] * 100).where(
-        long_df["total_hr"] > 0
-    )
+    long_df["pct"] = (long_df["seconds"] / long_df["total_hr"] * 100).where(long_df["total_hr"] > 0)
     long_df["minutes"] = (long_df["seconds"] / 60).round(0)
     long_df = long_df.dropna(subset=["pct"])
 
@@ -415,9 +409,7 @@ if not zones_df.empty and zones_df["total_hr"].sum() > 0:
     long_df["zone_label"] = long_df["zone"].map(zone_labels)
 
     # Preserva ordem cronológica das semanas no eixo X
-    week_order = (
-        zones_df.sort_values("week_start_date")["week_label"].tolist()
-    )
+    week_order = zones_df.sort_values("week_start_date")["week_label"].tolist()
 
     fig_z = px.bar(
         long_df,
