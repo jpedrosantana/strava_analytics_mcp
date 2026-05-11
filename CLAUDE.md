@@ -56,3 +56,55 @@ Bundle pré-D4 (3 itens [Alta] do `BACKLOG.md`):
 - ⏳ Best efforts via streams — pré-requisito direto do `fct_pr_efforts` em D4
 
 Stack: SQLite (operational, MCP) + DuckDB (analytics, dbt).
+
+## Workflows comuns
+
+Comandos canônicos do projeto. Use estes antes de inventar variações.
+
+```bash
+# Pipeline analytics (recalcula activity_metrics + daily_metrics)
+uv run strava-mcp compute-metrics
+
+# Popular athlete_config (LTHR, FCmáx, FCrest, threshold_pace, sex)
+uv run python scripts/seed_athlete_config.py
+
+# Rodar dbt (build padrão; aceita qualquer subcomando dbt)
+./scripts/transform.sh                          # = dbt build
+./scripts/transform.sh test
+./scripts/transform.sh build --select fct_weekly_summary
+
+# Dashboard Streamlit
+./scripts/dashboard.sh
+
+# Lint / format (replica o que a CI roda)
+uv run --group dev ruff format --check .
+uv run --group dev ruff check .
+```
+
+**Regra operacional crítica:** o Streamlit segura o lock do arquivo
+`data/strava.duckdb` enquanto está aberto. Qualquer `dbt build`
+falha com `IOException: Could not set lock on file`. **Sempre pedir
+para o usuário parar o dashboard antes de qualquer `dbt build` ou
+`compute-metrics` que escreva no DuckDB.** Não tentar matar o
+processo do usuário.
+
+`uv run` sem `--group <nome>` pode resolver para dependências
+erradas (ex.: `uv run dbt` traz `dbt-fusion`, que não suporta DuckDB).
+Sempre especificar o group: `dbt`, `dashboard`, `dev`, `notebook`.
+
+## Checklist antes de abrir PR
+
+Antes de pushed/abrir PR, validar localmente o que a CI vai checar e
+o que a infra exige:
+
+1. `uv run --group dev ruff format --check .` passa (CI bloqueia se não)
+2. `uv run --group dev ruff check <arquivos modificados>` passa
+3. Se mudou pipeline analytics (`compute_metrics`, `analytics/`,
+   `repositories`): rodar `uv run strava-mcp compute-metrics` para
+   confirmar que processa as 301 atividades sem erro
+4. Se mudou marts dbt ou pipeline upstream: parar Streamlit do usuário,
+   rodar `./scripts/transform.sh` (espera 91 testes PASS)
+5. Spot-check empírico do impacto: query rápida no DuckDB ou amostra
+   no SQLite que mostre o antes/depois (não basta "código compila")
+6. PR description: descrever **por que** e **impacto numérico**, não
+   só **o que** — replicar formato dos PRs anteriores (#16, #18, #19)
