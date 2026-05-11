@@ -19,6 +19,7 @@ from strava_mcp.analytics.ngp import activity_ngp_metrics
 from strava_mcp.analytics.zones import (
     estimate_hrmax,
     estimate_lthr,
+    zone_seconds_from_stream,
     zone_seconds_from_summary,
 )
 from strava_mcp.db.migrations import apply_migrations
@@ -97,8 +98,14 @@ def compute_activity_metrics(
         "z4_seconds": 0,
         "z5_seconds": 0,
     }
-    if avg_hr and lthr and moving_time:
-        zone_secs = zone_seconds_from_summary(avg_hr, moving_time, lthr)
+    if lthr:
+        # Preferir cálculo amostra-a-amostra quando há stream de FC; cai no
+        # fallback de média só quando o stream estiver indisponível (atividades
+        # antigas sem download de streams).
+        if hr_stream:
+            zone_secs = zone_seconds_from_stream(hr_stream, lthr)
+        elif avg_hr and moving_time:
+            zone_secs = zone_seconds_from_summary(avg_hr, moving_time, lthr)
 
     return {
         "trimp": trimp_val,
