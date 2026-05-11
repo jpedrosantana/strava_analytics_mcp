@@ -1,5 +1,6 @@
 """Full analytics compute pipeline: activity_metrics + daily_metrics."""
 
+import json
 import sqlite3
 from collections import defaultdict
 from collections.abc import Callable
@@ -107,6 +108,21 @@ def compute_activity_metrics(
         elif avg_hr and moving_time:
             zone_secs = zone_seconds_from_summary(avg_hr, moving_time, lthr)
 
+    # Strava entrega average_temp dentro do raw_json (sensor do Garmin/relógio).
+    # Cobre ~64% das corridas (atividades indoor / sem sensor de temp ficam None).
+    # Sem essa extração, weather_temp_c fica NULL no banco e what_drives_my_performance
+    # reporta importância ~0 para temperatura mesmo havendo sinal disponível.
+    weather_temp_c: float | None = None
+    raw_json_str = activity.get("raw_json")
+    if raw_json_str:
+        try:
+            raw = json.loads(raw_json_str)
+            temp = raw.get("average_temp")
+            if temp is not None:
+                weather_temp_c = float(temp)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
+
     return {
         "trimp": trimp_val,
         "hr_tss": hr_tss_val,
@@ -115,6 +131,7 @@ def compute_activity_metrics(
         "intensity_factor": ngp_metrics.get("intensity_factor"),
         "aerobic_efficiency": eff_metrics.get("aerobic_efficiency"),
         "decoupling_pct": eff_metrics.get("decoupling_pct"),
+        "weather_temp_c": weather_temp_c,
         **zone_secs,
     }
 
