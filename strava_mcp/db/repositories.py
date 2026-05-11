@@ -278,11 +278,13 @@ class MetricsRepository:
                 activity_id, trimp, hr_tss, r_tss,
                 aerobic_efficiency, decoupling_pct, ngp_mps, intensity_factor,
                 z1_seconds, z2_seconds, z3_seconds, z4_seconds, z5_seconds,
+                weather_temp_c,
                 computed_at
             ) VALUES (
                 :activity_id, :trimp, :hr_tss, :r_tss,
                 :aerobic_efficiency, :decoupling_pct, :ngp_mps, :intensity_factor,
                 :z1_seconds, :z2_seconds, :z3_seconds, :z4_seconds, :z5_seconds,
+                :weather_temp_c,
                 :computed_at
             )
             ON CONFLICT(activity_id) DO UPDATE SET
@@ -298,6 +300,7 @@ class MetricsRepository:
                 z3_seconds = excluded.z3_seconds,
                 z4_seconds = excluded.z4_seconds,
                 z5_seconds = excluded.z5_seconds,
+                weather_temp_c = excluded.weather_temp_c,
                 computed_at = excluded.computed_at
             """,
             metrics,
@@ -355,7 +358,8 @@ class MetricsRepository:
             """
             SELECT id, sport_type, start_date_utc,
                    average_heartrate, max_heartrate,
-                   moving_time_s, distance_m, elevation_gain_m
+                   moving_time_s, distance_m, elevation_gain_m,
+                   raw_json
             FROM activities
             ORDER BY start_date_utc
             """
