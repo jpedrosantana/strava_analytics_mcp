@@ -1,18 +1,26 @@
 """Seed athlete_config com valores fisiológicos do atleta.
 
 Os valores aqui sobrescrevem qualquer entrada existente. Atualize conforme
-um novo teste de FCmáx, LTHR (média de FC em meias maratonas de prova),
-ou medição refinada de FCrest. Reexecute `compute-metrics --recompute`
-após mudar valores para reprocessar os marts.
+um novo teste de FCmáx, LTHR, threshold pace, ou medição refinada de FCrest.
+Reexecute `compute-metrics` após mudar valores para reprocessar os marts.
 
-Valores atuais (cf. CLAUDE.md > Perfil do atleta):
-    FCmáx  = 201 bpm  (Teste de 6Km em 28/02/2026)
-    LTHR   = 177 bpm  (média das FC em meias maratonas de prova: 173-179 bpm)
-    FCrest = 50 bpm   (placeholder; medir ao acordar para refinar)
-    sex    = male
+Valores atuais:
+    FCmáx              = 201 bpm    (Teste de 6Km em 28/02/2026)
+    LTHR               = 177 bpm    (média das FC em meias maratonas de
+                                     prova: 173-179 bpm)
+    FCrest             = 50 bpm     (placeholder; medir ao acordar)
+    threshold_pace_mps = 3.663 m/s  (4:33/km; ritmo sustentável por ~1h)
+    sex                = male
 
-Não populamos threshold_pace_mps aqui — gap separado tracked no BACKLOG.md
-como [Alta] "Investigar r_tss sempre NULL".
+Como o threshold pace foi estimado:
+- Melhor meia recente: Mizuno Athenas 15/03/2026 — 21,22 km em 1:40:09
+  (pace 4:43/km, FC média 175 ≈ LTHR 177)
+- Tabela Daniels para HM 1:40 → VDOT ~48.4 → T-pace ~4:25/km
+- Regra empírica HM_pace - 10s/km → 4:33/km
+- Conversão 12km a 4:55 → 10K ~4:48 → T-pace ~4:35/km
+- Convergência: ~4:30-4:35/km. Adotado meio-termo de 4:33/km = 3.663 m/s.
+
+Revisitar após próxima meia oficial ou teste de campo (TT 3K / 30min).
 """
 
 from __future__ import annotations
@@ -28,6 +36,7 @@ ENTRIES: dict[str, str] = {
     "lthr": "177",
     "hr_max": "201",
     "hr_rest": "50",
+    "threshold_pace_mps": "3.663",
     "sex": "male",
 }
 
