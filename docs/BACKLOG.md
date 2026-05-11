@@ -44,37 +44,6 @@ Itens **[Alta]** já agendados em um roadmap em execução trazem nota explícit
 
 **Impacto:** menos falsos positivos em trajetos com perfil acidentado, classificação mais justa de "rotas duras" vs. "dia ruim".
 
-### [Alta] Extrair `average_temp` do `raw_json` para coluna própria
-
-**Problema:** o `what_drives_my_performance` consulta `activity_metrics.weather_temp_c`, que está sempre nulo (nunca populamos esse campo). Resultado: a feature de temperatura tem importância ~0 no modelo, mesmo que ~41% das atividades tenham temperatura no `raw_json` do Strava.
-
-**Solução proposta:** durante o `compute-metrics`, ler `raw_json.average_temp` (do sensor do Garmin) e gravar em `activity_metrics.weather_temp_c`. Sem precisar de Open-Meteo (cf. ADR 0002).
-
-**Impacto:** o modelo de drivers passa a refletir o impacto real da temperatura no pace.
-
-> **Status:** agendado para execução antes da Fase D4 (roadmap de dados, spec §12.8). Mart `fct_race_performance` consome a coluna populada.
-
-### [Alta] Investigar `r_tss` sempre NULL
-
-**Problema:** durante o smoke test do D5 descobrimos que `activity_metrics.r_tss` está NULL em **100% das atividades** — incluindo as 194 corridas. O `hr_tss` tem 99,7% de cobertura, então o dashboard funciona usando `coalesce(r_tss, hr_tss)`, mas para corridas o ideal é o rTSS, que compensa elevação via NGP.
-
-**Hipótese principal:** o cálculo em `analytics/load.py` provavelmente depende de `threshold_pace` no `athlete_config`, que nunca foi populado. Sem threshold, a função retorna NULL silenciosamente.
-
-**Impacto downstream:**
-- `fct_activity.r_tss` NULL → marts de treino (D3 weekly_summary) e prova (D4 race_performance) caem no `hr_tss` para corridas
-- `hr_tss` pode subestimar carga em intervalados (FC tem inércia, não acompanha picos curtos)
-- `predict_race_time` usa NGP — se o pipeline NGP estiver quebrado, a predição também sofre
-
-**Solução proposta:**
-- Auditar `analytics/load.py:r_tss` (e `analytics/ngp.py`) para identificar a condição que retorna NULL
-- Se faltar `threshold_pace`: estimar via melhor meia recente (faixa 4:43-4:55/km) e popular `athlete_config`
-- Reexecutar `compute-metrics --recompute` após o fix
-- Comparar r_tss vs hr_tss em ≥10 corridas variadas — se diferença média for grande (>10%), atualizar marts; se pequena, fica como tech debt
-
-**Impacto:** pipeline de carga corrige a métrica de gold standard pra runs, marts D3+ ficam mais íntegros, predict_race_time volta a ter NGP útil.
-
-> **Status:** agendado para execução antes da Fase D4, junto com `Best efforts via streams` e `Extrair average_temp` (bundle de quality fixes pré-marts de prova).
-
 ### [Média] Camada de qualidade de dados (Data Quality Layer)
 
 **Problema:** múltiplas classes de erro nos streams entram direto nos cálculos sem qualquer defensivo. Auditoria da Fase 8 confirmou que o único filtro existente é `np.clip(grade, ±0.45)` em NGP e drop de HR=0 em EF — qualquer outro tipo de ruído contamina métricas downstream. Categorias relevantes:
@@ -195,9 +164,28 @@ Decisão atual em [ADR 0002](decisions/0002-weather-integration-optional.md): po
 
 ---
 
+## Concluído
+
+Itens originalmente listados aqui que já foram executados. Mantidos como histórico para rastreabilidade do "porquê" das mudanças no pipeline.
+
+### [Alta] Extrair `average_temp` do `raw_json` para coluna própria — PR #19 (11/05/2026)
+
+`compute-metrics` agora parsea `raw_json.average_temp` e grava em `activity_metrics.weather_temp_c`. Cobertura: 0/194 → 124/194 corridas (64%). Indoor (Pilates/WeightTraining) seguem sem cobertura como esperado. Habilita coluna populada em `fct_race_performance` (D4) e o modelo de `what_drives_my_performance` passa a ter sinal real de temperatura.
+
+### [Alta] Investigar `r_tss` sempre NULL — PR #18 (11/05/2026)
+
+Causa confirmada: `analytics/ngp.py:r_tss()` retornava `None` quando `threshold_pace_mps` era ausente — e `athlete_config` estava vazio (preenchido só parcialmente em PR #16, sem o pace). Fix: adicionar `threshold_pace_mps = 3.663 m/s` (4:33/km, estimado via Daniels a partir da meia 1:40:09 em 15/03/2026) ao `scripts/seed_athlete_config.py`. Cobertura: 0/194 → 194/194 corridas (100%). `r_tss` médio é ~17% menor que `hr_tss` — diferença esperada (`hr_tss` superestima em esteira, dia quente, residual de intervalado). `coalesce(r_tss, hr_tss)` nos marts D3 herda o sinal melhor automaticamente.
+
+### [Alta] Zonas Z1-Z5 calculadas via FC média (não listado originalmente) — PR #16 (10/05/2026)
+
+Descoberto durante validação visual da página D5p3: `compute_metrics` chamava sempre `zone_seconds_from_summary` (joga 100% do `moving_time` na zona da FC média), nunca `zone_seconds_from_stream` (amostra-a-amostra). 300/301 atividades tinham todo o tempo concentrado em uma zona só. Fix: usar `_from_stream` quando `hr_stream` disponível; popular `athlete_config` (LTHR=177, FCmáx=201, FCrest=50) via `scripts/seed_athlete_config.py` (`threshold_pace_mps` ficou de fora, fixado depois em PR #18). Multi-zona: 1/301 → 193/301 atividades. Sem esse fix, toda a análise de polarização e a página D5p3 seriam enganosas.
+
+---
+
 ## Convenções
 
 - Itens descritos aqui são **não comprometidos** — viram trabalho só após decisão explícita
 - Cada item carrega tag de prioridade no título (`[Alta]`, `[Média]`, `[Baixa]`) conforme rubric no início do arquivo. Reavaliar quando algo mudar de fase
 - Quando um item entra em execução, mover para o roadmap principal (`docs/STRAVA_MCP_SPEC.md`) ou criar ADR específico
+- Quando um item é concluído, mover para a seção "Concluído" preservando o resumo do que mudou e número do PR
 - Se uma melhoria for decidida e descartada, mover para o final como histórico
