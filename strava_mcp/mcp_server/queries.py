@@ -614,54 +614,23 @@ def query_athlete_doctor(conn: sqlite3.Connection, db_path: str) -> dict[str, An
 # 5.5 Predictions
 # ---------------------------------------------------------------------------
 
-# Standard race distances and the tolerance band we accept as "this run was
-# basically that distance". Tight upper bound avoids treating a 25K race as a
-# slow half-marathon.
-STANDARD_DISTANCES: list[tuple[str, float]] = [
-    ("5K", 5000.0),
-    ("10K", 10000.0),
-    ("15K", 15000.0),
-    ("Half Marathon", 21097.5),
-    ("25K", 25000.0),
-    ("30K", 30000.0),
-    ("Marathon", 42195.0),
-]
-
-_PR_LOWER_TOL = 0.98  # min distance = target * 0.98
-_PR_UPPER_TOL = 1.05  # max distance = target * 1.05
-
-
-def _best_effort_for_distance(conn: sqlite3.Connection, target_m: float) -> dict[str, Any] | None:
-    """Fastest run within the tolerance band around target_m."""
-    lo = target_m * _PR_LOWER_TOL
-    hi = target_m * _PR_UPPER_TOL
-    row = _one(
-        conn,
-        """
-        SELECT id, name, start_date_local, distance_m, moving_time_s,
-               average_speed_mps, average_heartrate
-        FROM activities
-        WHERE sport_type IN ('Run', 'TrailRun')
-          AND distance_m BETWEEN ? AND ?
-          AND moving_time_s > 0
-        ORDER BY moving_time_s ASC
-        LIMIT 1
-        """,
-        (lo, hi),
-    )
-    return row
+# Distâncias-padrão para predições e PRs. Fonte única em analytics.best_efforts,
+# também usada pela tabela activity_best_efforts (populada por compute-metrics).
+from strava_mcp.analytics.best_efforts import STANDARD_DISTANCES  # noqa: E402
+from strava_mcp.db.repositories import BestEffortRepository  # noqa: E402
 
 
 def query_find_personal_records(conn: sqlite3.Connection) -> list[dict[str, Any]]:
-    """Best time at each standard distance, computed from summary data.
+    """Best time at each standard distance, computed from stream-based efforts.
 
-    For each distance in STANDARD_DISTANCES, picks the run within
-    [target*0.98, target*1.05] with the fastest moving_time.
-    Distances with no matching run are returned with status="no_record".
+    Returns the fastest segment ever run covering at least `distance_m` —
+    including segments inside longer activities (e.g. a 5K split inside a
+    10K run). Backed by `activity_best_efforts` from `compute-metrics`.
+    Outdoor runs only (indoor treadmill activities lack a distance stream).
     """
     results: list[dict[str, Any]] = []
     for label, dist_m in STANDARD_DISTANCES:
-        best = _best_effort_for_distance(conn, dist_m)
+        best = BestEffortRepository.get_fastest(conn, label)
         if best is None:
             results.append(
                 {
@@ -671,19 +640,24 @@ def query_find_personal_records(conn: sqlite3.Connection) -> list[dict[str, Any]
                 }
             )
             continue
+        time_s = best["time_s"]
+        pace_mps = dist_m / time_s if time_s > 0 else None
+        parent_distance = best.get("parent_distance_m") or 0.0
         results.append(
             {
                 "distance_label": label,
                 "distance_m": dist_m,
                 "status": "ok",
-                "activity_id": best["id"],
+                "activity_id": best["activity_id"],
                 "name": best["name"],
                 "date": str(best.get("start_date_local", ""))[:10],
-                "actual_distance_m": round(best["distance_m"], 1),
-                "time_s": best["moving_time_s"],
-                "time_str": _time_str(best["moving_time_s"]),
-                "pace": _pace_str(best.get("average_speed_mps")),
+                "time_s": round(time_s, 1),
+                "time_str": _time_str(time_s),
+                "pace": _pace_str(pace_mps),
                 "avg_hr": best.get("average_heartrate"),
+                "segment_start_s": round(best["segment_start_s"], 1),
+                "parent_distance_m": round(parent_distance, 1),
+                "is_segment": parent_distance > dist_m * 1.05,
             }
         )
     return results
@@ -744,18 +718,18 @@ def query_predict_race_time(
                 "error": "No personal records available to base prediction on.",
                 "hint": "Need at least one Run with distance >= 5K.",
             }
-        src = _one(
-            conn,
-            """
-            SELECT id, name, start_date_local, distance_m, moving_time_s
-            FROM activities
-            WHERE id = ?
-            """,
-            (chosen["activity_id"],),
-        )
+        # Use the best-effort segment (distance_m, time_s) directly — these are
+        # the target distance and the fastest contiguous time we ran it in,
+        # which is the right input for Riegel/VDOT regardless of whether the
+        # segment was inside a longer activity.
+        src = {
+            "id": chosen["activity_id"],
+            "name": chosen["name"],
+            "start_date_local": chosen["date"],
+            "distance_m": chosen["distance_m"],
+            "moving_time_s": chosen["time_s"],
+        }
         source_label = f"closest_pr ({chosen['distance_label']})"
-        if src is None:
-            return {"error": "PR activity disappeared between queries"}
 
     prediction = _predict_race_time(
         known_distance_m=src["distance_m"],

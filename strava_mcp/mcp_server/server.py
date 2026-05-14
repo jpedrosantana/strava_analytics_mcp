@@ -256,10 +256,13 @@ def get_decoupling_trend(months_back: int = 6) -> list[dict[str, Any]]:
 def find_personal_records() -> list[dict[str, Any]]:
     """Melhores tempos do atleta em distâncias-padrão de corrida.
 
-    Retorna PRs em 5K, 10K, 15K, Meia (21.0975K), 25K, 30K e Maratona.
-    Para cada distância, considera corridas dentro da janela [target × 0.98,
-    target × 1.05] e seleciona a com menor moving_time. Distâncias sem
-    registro retornam status "no_record".
+    Retorna PRs em 1K, 5K, 10K, 15K, Meia (21.0975K), 25K, 30K e Maratona,
+    calculados via janela deslizante sobre `distance` + `time` streams — então
+    o PR de 5K pode vir de um trecho dentro de uma corrida maior. Cada item
+    inclui `segment_start_s`, `parent_distance_m` e `is_segment` para o LLM
+    indicar se o esforço veio de uma corrida-cheia ou de um split. Indoor
+    runs (sem stream de GPS) não entram. Distâncias sem registro retornam
+    status "no_record".
     """
     with _conn() as conn:
         return query_find_personal_records(conn)

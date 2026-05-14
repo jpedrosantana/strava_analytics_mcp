@@ -69,6 +69,23 @@ CREATE TABLE IF NOT EXISTS activity_metrics (
     FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS activity_best_efforts (
+    activity_id INTEGER NOT NULL,
+    distance_label TEXT NOT NULL,
+    distance_m REAL NOT NULL,
+    time_s REAL NOT NULL,
+    segment_start_s REAL NOT NULL,
+    segment_end_s REAL NOT NULL,
+    start_idx INTEGER NOT NULL,
+    end_idx INTEGER NOT NULL,
+    computed_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (activity_id, distance_label),
+    FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_best_efforts_distance_time
+    ON activity_best_efforts(distance_label, time_s);
+
 CREATE TABLE IF NOT EXISTS daily_metrics (
     date DATE PRIMARY KEY,
     daily_tss REAL NOT NULL DEFAULT 0,

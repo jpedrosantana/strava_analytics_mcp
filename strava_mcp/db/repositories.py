@@ -206,6 +206,73 @@ class StreamRepository:
 
 
 # ---------------------------------------------------------------------------
+# BestEffortRepository
+# ---------------------------------------------------------------------------
+
+
+class BestEffortRepository:
+    @staticmethod
+    def upsert_many(
+        conn: sqlite3.Connection,
+        activity_id: int,
+        efforts: list[dict[str, Any]],
+    ) -> None:
+        """Replace the best-effort rows for an activity with the given set.
+
+        Always wipes prior rows for the activity before inserting, so an
+        activity that no longer covers a previously-recorded distance
+        (e.g. after manual distance fix) doesn't leave stale rows behind.
+        """
+        conn.execute("DELETE FROM activity_best_efforts WHERE activity_id = ?", (activity_id,))
+        if not efforts:
+            return
+        now = datetime.now(UTC).isoformat()
+        rows = [
+            {
+                "activity_id": activity_id,
+                "computed_at": now,
+                **e,
+            }
+            for e in efforts
+        ]
+        conn.executemany(
+            """
+            INSERT INTO activity_best_efforts (
+                activity_id, distance_label, distance_m, time_s,
+                segment_start_s, segment_end_s, start_idx, end_idx, computed_at
+            ) VALUES (
+                :activity_id, :distance_label, :distance_m, :time_s,
+                :segment_start_s, :segment_end_s, :start_idx, :end_idx, :computed_at
+            )
+            """,
+            rows,
+        )
+
+    @staticmethod
+    def get_fastest(
+        conn: sqlite3.Connection,
+        distance_label: str,
+    ) -> dict[str, Any] | None:
+        """Fastest best effort across all activities at the given distance."""
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT be.activity_id, be.distance_label, be.distance_m, be.time_s,
+                   be.segment_start_s, be.segment_end_s,
+                   a.name, a.start_date_local, a.distance_m AS parent_distance_m,
+                   a.average_heartrate, a.sport_type
+            FROM activity_best_efforts be
+            JOIN activities a ON a.id = be.activity_id
+            WHERE be.distance_label = ?
+            ORDER BY be.time_s ASC
+            LIMIT 1
+            """,
+            (distance_label,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
 # SyncStateRepository
 # ---------------------------------------------------------------------------
 
