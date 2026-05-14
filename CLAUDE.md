@@ -32,14 +32,16 @@ Valores ao vivo em `athlete_config` (populados via `scripts/seed_athlete_config.
 Faço corrida e musculação há quase 1 ano e meio, minha rotina de treinos de musculação são de 2-3x na semana (sendo 2 de funcional e 1 musculação) e de corrida é de 3-4x na semana (normalmente 2 treinos de rodage, 1 intervalado/fartlek e 1 longão de sábado). Meu objetivo atual é melhorar minha performance na corrida, atualmente estou me preparando para uma maratona em Julho. Meu histórico de provas tem destaque com as meias maratonas, completei 7 até o momento e até a maratona tenho mais uma prova de 21Km e outra de 25Km para fazer.
 
 ## Status atual dos dados
-Streams: 100% completos (301/301 atividades). Último download: 10/05/2026.
+Streams: 100% completos (305/305 atividades). Último download: 14/05/2026.
 `athlete_config`: populado (LTHR, FCmáx, FCrest, threshold_pace_mps, sex).
-`compute-metrics` (último run em 11/05/2026) computa via stream:
+`compute-metrics` (último run em 14/05/2026) computa via stream:
 - EF e decoupling (efficiency)
 - Zonas Z1-Z5 (fix #16 — antes usava só FC média e jogava tudo numa zona)
-- `r_tss` populado em 100% das 194 corridas (fix #18 — antes 0%)
-- `weather_temp_c` extraído do `raw_json.average_temp` em 64% das corridas
+- `r_tss` populado em 100% das 197 corridas (fix #18 — antes 0%)
+- `weather_temp_c` extraído do `raw_json.average_temp` em ~64% das corridas
   (fix #19 — antes 0%; indoor naturalmente sem cobertura)
+- `activity_best_efforts` populado em 185 corridas outdoor / 512 esforços
+  em 1K–Meia (PR #22 — antes a tabela não existia)
 
 ## Roadmap em execução
 Fases 0-9 do roadmap principal: concluídas. Fase 10 (post público) aguarda fim do projeto de BI.
@@ -47,13 +49,13 @@ Fases 0-9 do roadmap principal: concluídas. Fase 10 (post público) aguarda fim
 Camada de dados (cf. [ADR 0004](docs/decisions/0004-data-layer-duckdb-and-sequencing.md)):
 
 ```
-D1 ✅ → D2 ✅ → D5 páginas 1-2 ✅ → D3 ✅ → D5 página 3 ✅ → bundle pré-D4 [2/3] ⬅️ → D4 → D6 → D7
+D1 ✅ → D2 ✅ → D5 páginas 1-2 ✅ → D3 ✅ → D5 página 3 ✅ → bundle pré-D4 ✅ → D4 ⬅️ → D6 → D7
 ```
 
-Bundle pré-D4 (3 itens [Alta] do `BACKLOG.md`):
+Bundle pré-D4 (3 itens [Alta] do `BACKLOG.md`): concluído.
 - ✅ `r_tss=NULL` (PR #18)
 - ✅ `average_temp` do `raw_json` (PR #19)
-- ⏳ Best efforts via streams — pré-requisito direto do `fct_pr_efforts` em D4
+- ✅ Best efforts via streams (PR #22)
 
 Stack: SQLite (operational, MCP) + DuckDB (analytics, dbt).
 

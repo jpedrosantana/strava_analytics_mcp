@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+from strava_mcp.analytics.best_efforts import best_efforts_for_activity
 from strava_mcp.analytics.efficiency import activity_efficiency_metrics
 from strava_mcp.analytics.load import (
     best_tss_for_activity,
@@ -26,6 +27,7 @@ from strava_mcp.analytics.zones import (
 from strava_mcp.db.migrations import apply_migrations
 from strava_mcp.db.repositories import (
     AthleteConfigRepository,
+    BestEffortRepository,
     MetricsRepository,
     StreamRepository,
 )
@@ -198,6 +200,10 @@ def compute_all_metrics(
                 hr_stream=hr_stream,
             )
             MetricsRepository.upsert_activity_metrics(conn, activity["id"], metrics)
+
+            if activity.get("sport_type") == "Run" and distance_stream and time_stream:
+                efforts = best_efforts_for_activity(distance_stream, time_stream)
+                BestEffortRepository.upsert_many(conn, activity["id"], efforts)
 
             act_date = _parse_date(activity["start_date_utc"])
             tss = best_tss_for_activity(

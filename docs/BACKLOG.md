@@ -16,22 +16,6 @@ Itens **[Alta]** já agendados em um roadmap em execução trazem nota explícit
 
 ## Analytics
 
-### [Alta] Best efforts via streams em `find_personal_records`
-
-**Problema:** o cálculo atual considera apenas a distância **total** da atividade, dentro de uma janela de [target × 0,98, target × 1,05]. Isso exclui melhores esforços contidos dentro de corridas mais longas.
-
-**Exemplo real:** o "Teste de 6Km" (28/02/2026, 6,03 km a 4:14/km) provavelmente contém um 5K mais rápido (~4:13/km) que o PR registrado de 5K na "Corrida do Pão" (4:27/km). Como a atividade total tem 6 km, ela é excluída da janela de 5K (4900–5250 m).
-
-**Solução proposta:**
-- Carregar `distance_stream` + `time_stream` da atividade
-- Calcular o melhor segmento contínuo (janela deslizante) para cada distância-padrão
-- Persistir os best efforts em uma tabela própria (`activity_best_efforts`)
-- O PR finder consulta essa tabela em vez de filtrar por `distance_m` total
-
-**Impacto:** PRs verdadeiros, captura de "bombadas" dentro de longões, base mais sólida para predições.
-
-> **Status:** agendado para execução antes da Fase D4 (roadmap de dados, spec §12.8). Mart `fct_pr_efforts` consome o resultado.
-
 ### [Média] Features de elevação mais ricas em `find_anomalies`
 
 **Problema:** a feature de inclinação no modelo de anomalias é apenas `elevation_gain_m / distance_m`, que perde informação importante quando o trajeto tem perfil assimétrico (descida + subida pesada).
@@ -167,6 +151,19 @@ Decisão atual em [ADR 0002](decisions/0002-weather-integration-optional.md): po
 ## Concluído
 
 Itens originalmente listados aqui que já foram executados. Mantidos como histórico para rastreabilidade do "porquê" das mudanças no pipeline.
+
+### [Alta] Best efforts via streams em `find_personal_records` — PR #22 (14/05/2026)
+
+Sliding window O(N) sobre `distance` + `time` streams persiste em nova tabela `activity_best_efforts` (185 corridas outdoor cobertas, 512 esforços). `find_personal_records` consulta a tabela em vez de filtrar pela distância-total da atividade. Inclui clamp per-sample a 7,5 m/s para neutralizar GPS spikes (caso documentado: meia de 12/04/2026 com perda de sinal em túnel). Resultado antes/depois:
+
+| Distância | Antes | Depois | Ganho |
+|---|---|---|---|
+| 5K | 22:23 (Corrida do Pão) | **21:05** (Teste de 6Km, segmento) | −78s |
+| 10K | 51:47 (Morning Run) | **45:47** (Mizuno Athenas, segmento) | −360s |
+| 15K | 1:14:33 (Run the Bridge) | **1:09:45** (Mizuno Athenas, segmento) | −288s |
+| Meia | 1:40:11 | **1:39:30** (mesma atividade, sem pauses) | −41s |
+
+O caso do "Teste de 6Km" previsto no BACKLOG saiu confirmado: 5K em 4:13/km dentro da corrida de 6 km. 25K, 30K e Maratona seguem `no_record` (atleta ainda não rodou essas distâncias). Habilita `fct_pr_efforts` na Fase D4 — o mart consome a tabela diretamente.
 
 ### [Alta] Extrair `average_temp` do `raw_json` para coluna própria — PR #19 (11/05/2026)
 
