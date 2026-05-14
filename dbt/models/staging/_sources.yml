@@ -34,3 +34,18 @@ sources:
             tests:
               - not_null
               - unique
+      - name: activity_best_efforts
+        description: "Best efforts em distâncias-padrão computados via sliding-window sobre distance/time streams (PR #22). Grão: 1 linha por (activity_id, distance_label)."
+        columns:
+          - name: activity_id
+            description: "FK para activities.id."
+            tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('strava_raw', 'activities')
+                    field: id
+          - name: distance_label
+            description: "Rótulo da distância-padrão (1K, 5K, 10K, 15K, Half Marathon, 25K, 30K, Marathon)."
+            tests:
+              - not_null

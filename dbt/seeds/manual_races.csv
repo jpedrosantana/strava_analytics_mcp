@@ -1,0 +1,13 @@
+activity_id,is_race,distance_official_km,race_name,is_official,completed,objective
+13896643676,true,10.0,Circuito Athenas,true,true,training_race
+14164124058,true,16.0,Meia Maratona Internacional de SP,true,true,training_race
+14805808239,true,12.0,Athenas Run Stronger,true,true,training_race
+14869039790,true,21.0975,Rio de Janeiro 21Km,true,true,target_pr
+15251152067,true,21.0975,SP City 21Km,true,true,target_pr
+15569208909,true,21.0975,21Km Revezamento Maratona Fila,true,true,target_pr
+15646863220,true,15.0,Run the Bridge 15Km,true,true,training_race
+15963334464,true,5.0,Corrida do Pão 5Km,true,true,training_race
+16189846134,true,21.0975,Athenas Run Longer,true,true,target_pr
+16541655734,true,21.0975,Maratona Monumental de Brasília 21Km,true,true,target_pr
+17728745968,true,21.0975,Mizuno Athenas Run Faster,true,true,target_pr
+18077704598,true,21.0975,Morning Run 2026-04-12 (Meia),true,true,target_pr

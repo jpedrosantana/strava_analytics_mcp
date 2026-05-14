@@ -28,3 +28,7 @@ models:
     marts:
       +schema: marts
       +materialized: table
+
+seeds:
+  strava_bi:
+    +schema: seeds

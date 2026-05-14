@@ -1076,14 +1076,14 @@ Essa página por si só justifica o projeto e gera bons screenshots para LinkedI
 
 **Aceitação:** queries de exemplo respondem em < 100ms.
 
-#### Fase D4 — Marts de prova (após Fase 5 do principal)
+#### Fase D4 — Marts de prova (após Fase 5 do principal) ✅
 
-- [ ] `dim_race` com lógica de identificação combinada
-- [ ] `seeds/manual_races.csv` populado com as 7 meias do atleta + outras provas
-- [ ] `fct_race_performance` enriquecido com forma, clima, projeções
-- [ ] `fct_pr_efforts` em distâncias padrão (1K, 5K, 10K, 15K, 21.0975K, 42.195K)
+- [x] `dim_race` com lógica de identificação combinada (seed + workout_type=1)
+- [x] `seeds/manual_races.csv` populado com 12 provas (7 meias completadas)
+- [x] `fct_race_performance` enriquecido com forma, clima, projeções (Riegel→42K)
+- [x] `fct_pr_efforts` em distâncias padrão (1K, 5K, 10K, 15K, 21.0975K, 25K, 30K, 42.195K)
 
-**Aceitação:** todas as 7 meias aparecem em `dim_race`; `fct_race_performance` mostra para cada uma: tempo, pace, CTL/TSB no dia, clima, posição relativa entre as 7.
+**Aceitação:** todas as 7 meias aparecem em `dim_race`; `fct_race_performance` mostra para cada uma: tempo, pace, CTL/TSB no dia, clima, posição relativa entre as 7. ✓ Mizuno Athenas Run Faster (15/03/2026) é a meia PR atual em 1:40:11.
 
 #### Fase D5 — Streamlit MVP (após Fase 4 do principal)
 

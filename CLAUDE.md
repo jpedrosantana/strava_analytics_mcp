@@ -49,13 +49,19 @@ Fases 0-9 do roadmap principal: concluídas. Fase 10 (post público) aguarda fim
 Camada de dados (cf. [ADR 0004](docs/decisions/0004-data-layer-duckdb-and-sequencing.md)):
 
 ```
-D1 ✅ → D2 ✅ → D5 páginas 1-2 ✅ → D3 ✅ → D5 página 3 ✅ → bundle pré-D4 ✅ → D4 ⬅️ → D6 → D7
+D1 ✅ → D2 ✅ → D5 páginas 1-2 ✅ → D3 ✅ → D5 página 3 ✅ → bundle pré-D4 ✅ → D4 ✅ → D6 ⬅️ → D7
 ```
 
 Bundle pré-D4 (3 itens [Alta] do `BACKLOG.md`): concluído.
 - ✅ `r_tss=NULL` (PR #18)
 - ✅ `average_temp` do `raw_json` (PR #19)
 - ✅ Best efforts via streams (PR #22)
+
+D4 (marts de prova): concluído.
+- ✅ `seeds/manual_races.csv` (12 provas, 7 meias completadas)
+- ✅ `dim_race` (identificação combinada: seed + workout_type=1)
+- ✅ `fct_pr_efforts` (best efforts ranked, is_pr/is_segment)
+- ✅ `fct_race_performance` (tempo/pace/CTL/TSB/clima/Riegel→42K/rank entre meias)
 
 Stack: SQLite (operational, MCP) + DuckDB (analytics, dbt).
 
