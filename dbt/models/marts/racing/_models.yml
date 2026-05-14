@@ -1,0 +1,116 @@
+version: 2
+
+models:
+  - name: dim_race
+    description: "Dimensão de prova. Identificação combinada (spec §12.4): seed manual_races tem prioridade; workout_type=1 do Strava entra como fallback com defaults conservadores. Inclui distance_label só quando a distância oficial cai numa das padrão (5K, 10K, 15K, Half Marathon, etc.) — usado para joins com fct_pr_efforts e ranking em fct_race_performance."
+    columns:
+      - name: activity_id
+        description: "FK para `dim_activity.activity_id`. PK do dim_race (1:1 com atividade-prova)."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_activity')
+                field: activity_id
+      - name: race_date
+        description: "Data da prova (start_date_local)."
+        tests:
+          - not_null
+      - name: race_name
+        description: "Nome amigável (do seed quando disponível; cai no nome da atividade Strava se vier só por workout_type)."
+        tests:
+          - not_null
+      - name: distance_official_km
+        description: "Distância oficial da prova em km. Pode diferir do clock (GPS inflado/truncado) — use ESTA coluna em pace/projeção, não a do activity."
+      - name: distance_label
+        description: "Rótulo da distância-padrão quando cabe na grade fechada (1K, 5K, 10K, 15K, Half Marathon, 25K, 30K, Marathon). Null para distâncias não-padrão (ex.: 16K)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['1K', '5K', '10K', '15K', 'Half Marathon', '25K', '30K', 'Marathon']
+              config:
+                severity: warn
+      - name: is_official
+        description: "Prova organizada (chip, percurso medido), não só corrida em ritmo de prova."
+      - name: completed
+        description: "Atleta completou a distância oficial. Falso para DNF/short."
+      - name: objective
+        description: "Intenção da prova: 'target_pr', 'training_race', 'dnf', etc. Free-text controlado por convenção do seed."
+      - name: detection_source
+        description: "'seed' (override manual) | 'workout_type' (heurística Strava). Útil pra auditar quais provas precisam de curadoria manual."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['seed', 'workout_type']
+
+  - name: fct_pr_efforts
+    description: "Fato dos best efforts por distância-padrão (1K–Maratona). Grão: 1 linha por (activity_id, distance_label). Inclui rank dentro da distância (is_pr quando rank=1) e flag is_segment indicando se o esforço veio de um split dentro de uma corrida maior."
+    columns:
+      - name: activity_id
+        description: "FK para `dim_activity.activity_id`."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_activity')
+                field: activity_id
+      - name: distance_label
+        description: "Distância-padrão do esforço. Compõe a PK com activity_id."
+        tests:
+          - not_null
+      - name: distance_m
+        description: "Distância-alvo nominal em metros."
+        tests:
+          - not_null
+      - name: time_s
+        description: "Tempo do segmento (segundos)."
+        tests:
+          - not_null
+      - name: pace_s_per_km
+        description: "Pace derivado de time_s / distance_km."
+        tests:
+          - not_null
+      - name: is_segment
+        description: "True se o esforço veio de um split dentro de corrida maior (parent_distance_m > distance_m × 1.05)."
+      - name: is_pr
+        description: "Rank 1 dentro da distância — i.e., PR atual."
+      - name: effort_rank
+        description: "Rank do esforço dentro da distância (1 = melhor)."
+        tests:
+          - not_null
+
+  - name: fct_race_performance
+    description: "Fato de performance por prova. 1 linha por race em dim_race. Pace baseado em distance_official_km (corrige GPS inflado/truncado). Inclui CTL/ATL/TSB do dia, clima, projeção Riegel para 42 km e rank entre provas completadas da mesma distância. Aceitação D4: todas as 7 meias completadas aparecem com rank_in_distance preenchido."
+    columns:
+      - name: activity_id
+        description: "FK para `dim_race.activity_id`. PK do fato."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_race')
+                field: activity_id
+      - name: race_date
+        description: "Data da prova."
+        tests:
+          - not_null
+      - name: time_s
+        description: "Moving time (s) da atividade. Excluindo pauses, alinhado com como Strava reporta best efforts."
+        tests:
+          - not_null
+      - name: pace_s_per_km
+        description: "Pace baseado em distance_official_km quando disponível; cai em distance_m do clock só quando não há oficial."
+      - name: ctl_on_race_day
+        description: "CTL no dia da prova. Null se a prova é antes da primeira atividade sincronizada."
+      - name: atl_on_race_day
+        description: "ATL no dia da prova."
+      - name: tsb_on_race_day
+        description: "TSB (CTL-ATL) — proxy de forma. Positivo = descansado entrando na prova."
+      - name: projected_marathon_time_s
+        description: "Riegel(1.06) projetando esse desempenho para 42,195 km. NULL quando não há distância oficial."
+      - name: rank_in_distance
+        description: "Rank entre provas completadas da mesma distance_label. NULL para DNFs ou distâncias não-padrão."
+      - name: total_in_distance
+        description: "Quantidade de provas completadas da mesma distance_label."

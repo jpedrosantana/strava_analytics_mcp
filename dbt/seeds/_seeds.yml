@@ -1,0 +1,42 @@
+version: 2
+
+seeds:
+  - name: manual_races
+    description: "Override manual de identificação de provas (spec §12.4). Linha por atividade que deve aparecer em dim_race, com distância oficial e metadados que o Strava não carrega (oficial? completou? objetivo?). Edite e rode `./scripts/transform.sh seed` para republicar."
+    config:
+      column_types:
+        activity_id: bigint
+        is_race: boolean
+        distance_official_km: double
+        race_name: varchar
+        is_official: boolean
+        completed: boolean
+        objective: varchar
+    columns:
+      - name: activity_id
+        description: "Strava activity ID. FK para activities."
+        tests:
+          - not_null
+          - unique
+      - name: is_race
+        description: "Se a atividade conta como prova. Geralmente true (entries no seed são curados como provas)."
+        tests:
+          - not_null
+      - name: distance_official_km
+        description: "Distância oficial da prova (km). 21.0975 para meia, 42.195 para maratona, etc."
+        tests:
+          - not_null
+      - name: race_name
+        description: "Nome legível da prova (para dashboards e narrativas)."
+        tests:
+          - not_null
+      - name: is_official
+        description: "Prova organizada com chip/percurso medido (true) ou só evento informal/race-pace (false)."
+        tests:
+          - not_null
+      - name: completed
+        description: "Atleta completou a distância oficial. Falso para DNF/short."
+        tests:
+          - not_null
+      - name: objective
+        description: "Intenção da prova: 'target_pr' (preparada com ciclo), 'training_race' (prova B), 'dnf', etc."

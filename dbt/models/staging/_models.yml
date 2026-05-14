@@ -58,6 +58,37 @@ models:
       - name: decoupling_pct
         description: "Aerobic decoupling Pa:HR (%) em corridas longas (≥60min)."
 
+  - name: stg_strava__activity_best_efforts
+    description: "Best efforts em distâncias-padrão (1K–Maratona) calculados via sliding-window O(N) sobre distance/time streams (cf. analytics.best_efforts). Grão: 1 linha por (activity_id, distance_label). Populado por `compute-metrics`."
+    columns:
+      - name: activity_id
+        description: "FK para `stg_strava__activities.activity_id`."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_strava__activities')
+                field: activity_id
+      - name: distance_label
+        description: "Rótulo da distância-padrão. Vocabulário fechado."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['1K', '5K', '10K', '15K', 'Half Marathon', '25K', '30K', 'Marathon']
+      - name: distance_m
+        description: "Distância-alvo nominal em metros (5000.0 para '5K' etc.)."
+        tests:
+          - not_null
+      - name: time_s
+        description: "Tempo (segundos) do melhor segmento contínuo que cobre `distance_m`."
+        tests:
+          - not_null
+      - name: segment_start_s
+        description: "Início do segmento (segundos desde o começo da atividade)."
+      - name: segment_end_s
+        description: "Fim do segmento (segundos desde o começo da atividade)."
+
   - name: stg_strava__daily_metrics
     description: "Roll-up diário de carga (CTL/ATL/TSB) e volume. Série contínua entre primeira e última atividade — dias sem treino entram com TSS=0."
     columns:
