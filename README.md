@@ -142,6 +142,29 @@ Conversas reais com o Claude usando o MCP — capturas reais do projeto em uso:
 
 [Ver conversa completa →](docs/conversations/race-prediction.md)
 
+## Dashboard
+
+Além das tools MCP, o mesmo warehouse alimenta um dashboard Streamlit local com 8 páginas para acompanhar o treino sem precisar conversar com o Claude. Acima dele, uma camada dbt transforma o SQLite em um warehouse DuckDB com marts dimensionais (dim_date, dim_activity, dim_race, fct_activity, fct_daily_load, fct_long_runs, fct_weekly_summary, fct_monthly_summary, fct_zone_distribution, fct_race_performance, fct_pr_efforts) — 131 testes dbt garantem integridade.
+
+```bash
+./scripts/transform.sh    # = dbt build (rebuilda os marts)
+./scripts/dashboard.sh    # sobe o Streamlit local
+```
+
+![Landing — forma atual e últimas atividades](docs/screenshots/dashboard/00-home.png)
+
+A landing mostra a forma do dia (CTL, ATL, TSB, ACWR) e o TSS dos últimos 7 dias. Daí o usuário navega para uma das 8 páginas.
+
+![Página de Ciclo Atual — trajetória de CTL e progressão de longos](docs/screenshots/dashboard/07-ciclo-atual.png)
+
+A página **Ciclo Atual** cruza o CTL real contra uma trajetória ideal até a data alvo configurada (default: maratona NB Porto Alegre, 12/07/2026) e plota os longos feitos contra uma curva Pfitzinger-style. Data, tempo objetivo e CTL alvo são ajustáveis no sidebar.
+
+![Página de Provas — PRs por distância, tabela das 7 meias e projeção Riegel→42K](docs/screenshots/dashboard/04-provas.png)
+
+A página **Provas** mostra os PRs em 8 distâncias padrão (1K–42K, com flag de segmento), as 12 provas completas com CTL/TSB/clima do dia e a projeção Riegel para a maratona.
+
+[Ver todas as 8 páginas em detalhe →](docs/DASHBOARD.md)
+
 ## Tools MCP disponíveis
 
 | Tool | Descrição |
@@ -185,12 +208,15 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 ## Documentação
 
 - [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
+- [Dashboard Streamlit](docs/DASHBOARD.md) — tour das 8 páginas com screenshots e perguntas que cada uma responde
 - [Exemplos de System Prompts para Modo Coach](docs/COACH_PROMPTS.md) — templates para usar o MCP como treinador pessoal
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — OAuth, rate limit, sync interrompido, gaps de stream, reset do banco, agendamento local
 - [Notebook de exemplo](examples/exploration.ipynb) — uso direto das funções de `analytics/` sem MCP, com plots de CTL/ATL, EF e predição de prova
 - [Como contribuir](CONTRIBUTING.md) e [Código de conduta](CODE_OF_CONDUCT.md)
 
 ## Roadmap
+
+**Roadmap principal — MCP server e analytics core**
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
@@ -203,9 +229,23 @@ Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico
 | 6 | ML e análises avançadas (anomalies, clustering, performance drivers) | ✅ |
 | 7 | Narrativa e diagnóstico (period narrative, plateau diagnosis, coach prompts) | ✅ |
 | 8 | Ajustes finos pós-review (diagrama, troubleshooting, auditoria, expansão do backlog) | ✅ |
-| 9 | Polish e portfólio (README, notebook, CI, governança) | — |
+| 9 | Polish e portfólio (README, notebook, CI, governança) | ✅ |
 | 10 | Conteúdo público (post conectando MCP + projeto de BI) | — |
+
+**Camada de dados — dbt + DuckDB + Streamlit** ([ADR 0004](docs/decisions/0004-data-layer-duckdb-and-sequencing.md))
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| D1 | Setup dbt + DuckDB; models de staging com testes | ✅ |
+| D2 | Marts core: dim_date, dim_activity, fct_activity, fct_daily_load | ✅ |
+| D3 | Marts de treino: fct_weekly_summary, fct_monthly_summary, fct_zone_distribution, fct_long_runs | ✅ |
+| D4 | Marts de prova: dim_race, fct_pr_efforts, fct_race_performance | ✅ |
+| D5 | Streamlit MVP — páginas Visão Geral, Carga e Forma, Eficiência | ✅ |
+| D6 | Streamlit completo — páginas Provas, Clima, Rotas, Ciclo Atual, Anomalias | ✅ |
+| D7 | Automação opcional (GitHub Actions, Streamlit Community Cloud) | — |
 
 ## Stack
 
-Python 3.11 · FastMCP · SQLite · SQLAlchemy · httpx · pandas · numpy · scipy · scikit-learn · typer · pydantic · structlog · uv · ruff · pytest
+**Pipeline e MCP:** Python 3.11 · FastMCP · SQLite · SQLAlchemy · httpx · pandas · numpy · scipy · scikit-learn · typer · pydantic · structlog
+**Camada de dados:** dbt-core · dbt-duckdb · DuckDB · Streamlit · Plotly
+**Tooling:** uv · ruff · pytest
