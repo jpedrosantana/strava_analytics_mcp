@@ -61,6 +61,12 @@ peak_date = target_date - timedelta(days=21)  # taper começa 3 semanas antes
 days_to_race = (target_date - today).days
 target_seconds = target_time_obj.hour * 3600 + target_time_obj.minute * 60 + target_time_obj.second
 
+# Versões Timestamp para passar pro Plotly. add_vline calcula a média de [x, x]
+# para posicionar a annotation, e isso falha com datetime.date puro.
+today_ts = pd.Timestamp(today)
+peak_ts = pd.Timestamp(peak_date)
+target_ts = pd.Timestamp(target_date)
+
 # ─── KPIs no topo ─────────────────────────────────────────────────────────────
 ctl_today = query(
     f"""
@@ -200,28 +206,23 @@ fig_ctl.add_trace(
         hovertemplate="%{x|%d %b %Y}<br>CTL: %{y:.1f}<extra></extra>",
     )
 )
-# Marcadores: hoje, peak, prova
-fig_ctl.add_vline(
-    x=today,
-    line_dash="dot",
-    line_color="#0f172a",
-    annotation_text="hoje",
-    annotation_position="top",
-)
-fig_ctl.add_vline(
-    x=peak_date,
-    line_dash="dot",
-    line_color="#dc2626",
-    annotation_text="peak",
-    annotation_position="top",
-)
-fig_ctl.add_vline(
-    x=target_date,
-    line_dash="dot",
-    line_color="#059669",
-    annotation_text="prova",
-    annotation_position="top",
-)
+# Marcadores: hoje, peak, prova. annotation_* do add_vline quebra com
+# datas (bug do Plotly em _mean), então adicionamos as labels separadamente.
+for x_ts, color, label in [
+    (today_ts, "#0f172a", "hoje"),
+    (peak_ts, "#dc2626", "peak"),
+    (target_ts, "#059669", "prova"),
+]:
+    fig_ctl.add_vline(x=x_ts, line_dash="dot", line_color=color)
+    fig_ctl.add_annotation(
+        x=x_ts,
+        y=1.0,
+        yref="paper",
+        text=label,
+        showarrow=False,
+        yanchor="bottom",
+        font=dict(color=color, size=11),
+    )
 
 fig_ctl.update_layout(
     height=400,
@@ -343,9 +344,21 @@ if not long_runs.empty:
         )
     )
 
-fig_long.add_vline(x=peak_date, line_dash="dot", line_color="#dc2626", annotation_text="peak")
-fig_long.add_vline(x=target_date, line_dash="dot", line_color="#059669", annotation_text="prova")
-fig_long.add_vline(x=today, line_dash="dot", line_color="#0f172a", annotation_text="hoje")
+for x_ts, color, label in [
+    (today_ts, "#0f172a", "hoje"),
+    (peak_ts, "#dc2626", "peak"),
+    (target_ts, "#059669", "prova"),
+]:
+    fig_long.add_vline(x=x_ts, line_dash="dot", line_color=color)
+    fig_long.add_annotation(
+        x=x_ts,
+        y=1.0,
+        yref="paper",
+        text=label,
+        showarrow=False,
+        yanchor="bottom",
+        font=dict(color=color, size=11),
+    )
 
 fig_long.update_layout(
     height=380,
