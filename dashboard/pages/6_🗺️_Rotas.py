@@ -48,6 +48,21 @@ with st.sidebar:
         help="Quantas atividades um ponto precisa ter próximas para formar cluster.",
     )
 
+    st.header("Estilo do mapa")
+    map_style_options = {
+        "Claro (Carto Positron)": "carto-positron",
+        "Escuro (Carto Darkmatter)": "carto-darkmatter",
+        "OpenStreetMap (colorido)": "open-street-map",
+    }
+    map_style_label = st.selectbox(
+        "Tema",
+        list(map_style_options.keys()),
+        index=0,
+        help="Estilos da Carto são minimalistas (sem ruído de POIs), parecidos "
+        "com mapas de BI. OSM mostra mais detalhes urbanos.",
+    )
+    map_style = map_style_options[map_style_label]
+
 period_filter = (
     f"and f.date_key >= current_date - interval {period_days} day" if period_days else ""
 )
@@ -229,7 +244,7 @@ fig = px.scatter_map(
     },
     zoom=9 if len(df_map) > 5 else 11,
     height=520,
-    map_style="open-street-map",
+    map_style=map_style,
 )
 fig.update_layout(
     margin=dict(l=0, r=0, t=0, b=0),
