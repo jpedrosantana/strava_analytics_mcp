@@ -81,6 +81,16 @@ Itens **[Alta]** já agendados em um roadmap em execução trazem nota explícit
 
 **Impacto:** tool deixa de "vender" insights frágeis; LLM tem sinal explícito para moderar interpretação quando o modelo está pouco confiável.
 
+### [Média] FC do segmento em `find_personal_records` (avg/max do esforço, não da atividade)
+
+**Problema:** `find_personal_records` retorna `avg_hr` da atividade inteira (`a.average_heartrate` em `repositories.py:263`, exposto em `queries.py:657`), não do segmento de best effort. Em treinos intervalados isso é enganoso: a FC média da atividade dilui aquecimento + recuperações + volta-calma, fazendo um tiro intenso parecer Z2.
+
+**Exemplo real:** RP de 1K em 04/05/2026 (`activity_id=18378572006`, segmento 2812–3033s). Tool reportou 145 bpm (72% FCmáx). Recalculando do stream HR no intervalo do segmento: **168,9 bpm médio / 182 pico (84% / 90% FCmáx, 95% / 103% LTHR)** — tiro real em Z4, não esforço leve. A leitura do `avg_hr` da atividade levaria a interpretar o RP como all-out (FC anormalmente baixa pra 3:40/km), quando na verdade foi um tiro forte dentro de um intervalado.
+
+**Solução proposta:** durante `compute-metrics`, ao gerar `activity_best_efforts`, calcular `avg_hr_segment` e `max_hr_segment` direto do `heartrate` stream entre `start_idx` e `end_idx` e persistir nas colunas novas. `BestEffortRepository.get_fastest` passa a expor essas colunas; `query_find_personal_records` retorna `avg_hr` = `avg_hr_segment` (fallback para `a.average_heartrate` apenas quando o stream HR não existir). Requer migration acrescentando duas colunas a `activity_best_efforts` + reprocessamento (185 corridas, ~minutos).
+
+**Impacto:** `find_personal_records` deixa de subestimar intensidade de PRs setados dentro de treinos compostos. Habilita filtro/ranking de RPs por "qualidade do esforço" (ex.: separar PR all-out com FC ≈ FCmáx de PR-pedaço-de-treino em Z3-Z4). Sinaliza ao LLM quando um RP é realmente uma estimativa conservadora do potencial (FC longe da FCmáx → ainda tem margem).
+
 ---
 
 ## Arquitetura e MCP
