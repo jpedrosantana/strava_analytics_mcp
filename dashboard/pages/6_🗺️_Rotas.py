@@ -66,6 +66,18 @@ with st.sidebar:
     )
     map_style = map_style_options[map_style_label]
 
+    size_max = st.slider(
+        "Tamanho máximo das bolhas",
+        min_value=10,
+        max_value=80,
+        value=30,
+        step=5,
+        help="Pontos ficam proporcionais ao número de corridas no cluster — "
+        "bolhas maiores = locais que você corre mais. Este slider controla "
+        "o tamanho máximo (do cluster mais frequente). Outliers ficam "
+        "sempre pequenos.",
+    )
+
 period_filter = (
     f"and f.date_key >= current_date - interval {period_days} day" if period_days else ""
 )
@@ -200,8 +212,9 @@ st.divider()
 # ─── Mapa interativo ──────────────────────────────────────────────────────────
 st.subheader("Mapa")
 st.caption(
-    "Pontos coloridos por cluster (escala discreta). Outliers ficam em cinza. "
-    "Hover mostra a atividade. Use o seletor abaixo para focar num cluster."
+    "Pontos coloridos por cluster (escala discreta), com tamanho proporcional "
+    "ao número de corridas no cluster — bolhas maiores marcam locais frequentes. "
+    "Outliers ficam em cinza com tamanho mínimo. Hover mostra a atividade."
 )
 
 
@@ -217,6 +230,14 @@ df["pace_str"] = df["pace_s_per_km"].apply(
     lambda s: f"{int(s // 60)}:{int(s % 60):02d}/km" if pd.notna(s) else "—"
 )
 df["date_str"] = pd.to_datetime(df["date_key"]).dt.strftime("%d/%m/%Y")
+
+# Tamanho da bolha = n_runs do cluster (proporcional à frequência do local).
+# Outliers ficam com size = 1 (representação mínima).
+if not clustered.empty:
+    cluster_size_map = cluster_stats.set_index("cluster_id")["n_runs"].to_dict()
+else:
+    cluster_size_map = {}
+df["display_size"] = df["cluster_id"].map(lambda cid: cluster_size_map.get(cid, 1))
 
 # Filtro de cluster
 if not clustered.empty:
@@ -236,6 +257,8 @@ fig = px.scatter_map(
     lat="lat",
     lon="lng",
     color="cluster_label",
+    size="display_size",
+    size_max=size_max,
     hover_data={
         "activity_name": True,
         "date_str": True,
@@ -244,6 +267,7 @@ fig = px.scatter_map(
         "lat": False,
         "lng": False,
         "cluster_label": False,
+        "display_size": False,
     },
     zoom=9 if len(df_map) > 5 else 11,
     height=520,
@@ -253,5 +277,5 @@ fig.update_layout(
     margin=dict(l=0, r=0, t=0, b=0),
     legend=dict(orientation="h", y=1.04, x=0.5, xanchor="center", title=None),
 )
-fig.update_traces(marker=dict(size=10, opacity=0.85))
+fig.update_traces(marker=dict(opacity=0.7))
 st.plotly_chart(fig, use_container_width=True)
