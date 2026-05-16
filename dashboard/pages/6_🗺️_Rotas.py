@@ -50,16 +50,19 @@ with st.sidebar:
 
     st.header("Estilo do mapa")
     map_style_options = {
-        "Claro (Carto Positron)": "carto-positron",
-        "Escuro (Carto Darkmatter)": "carto-darkmatter",
         "OpenStreetMap (colorido)": "open-street-map",
+        "Carto Voyager (suave, colorido)": "carto-voyager",
+        "Carto Positron (cinza claro)": "carto-positron",
+        "Carto Darkmatter (tema escuro)": "carto-darkmatter",
+        "Fundo branco (só pontos)": "white-bg",
     }
     map_style_label = st.selectbox(
         "Tema",
         list(map_style_options.keys()),
         index=0,
-        help="Estilos da Carto são minimalistas (sem ruído de POIs), parecidos "
-        "com mapas de BI. OSM mostra mais detalhes urbanos.",
+        help="OSM = detalhe urbano máximo. Voyager = OSM com paleta mais "
+        "limpa. Positron/Darkmatter = minimalistas estilo BI. White-bg = "
+        "sem mapa, só os pontos das corridas.",
     )
     map_style = map_style_options[map_style_label]
 
