@@ -16,3 +16,17 @@ docs/ai_review/
 docs/PRODUCT_NOTES.md
 docs/POST_STRATEGY.md
 docs/post/
+
+# Segredos e credenciais (defensivo — nunca commitar)
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.duckdb
+*.pem
+*.key
+*.p12
+token.json
+tokens.json
+secrets*
+credentials*
