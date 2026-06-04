@@ -65,7 +65,7 @@ D4 (marts de prova): concluído.
 - ✅ `fct_pr_efforts` (best efforts ranked, is_pr/is_segment)
 - ✅ `fct_race_performance` (tempo/pace/CTL/TSB/clima/Riegel→42K/rank entre meias)
 
-D6 (Streamlit completo): conteúdo 100%. Falta só screenshots no README.
+D6 (Streamlit completo): concluído (100%).
 - ✅ Página 4 (Provas) — PR #24, parte do bundle PR-A
 - ✅ Página 5 (Clima) — PR #24
 - ✅ Página 8 (Anomalias) — PR #24
@@ -74,7 +74,7 @@ D6 (Streamlit completo): conteúdo 100%. Falta só screenshots no README.
   CTL alvo no peak
 - ✅ Página 6 (Rotas) — PR #27: DBSCAN haversine, mapa MapLibre com 5
   estilos selecionáveis, bolhas proporcionais à frequência do cluster
-- ⬜ Screenshots no README (critério de aceitação D6)
+- ✅ Screenshots no README + docs/DASHBOARD.md (branch docs/readme-dashboard-section)
 
 Ciclo atual de maratona: NB Porto Alegre em 12/07/2026. Hoje (16/05/2026)
 estamos na semana 8 de 16, CTL ~58. Página 7 mostra a trajetória.
