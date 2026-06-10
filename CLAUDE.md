@@ -25,16 +25,17 @@ Valores ao vivo em `athlete_config` (populados via `scripts/seed_athlete_config.
 - LTHR: 177 bpm (média das FC em meias maratonas de prova: 173–179 bpm)
 - FCrest: 50 bpm (placeholder — medir ao acordar para refinar)
 - Threshold pace: 3,663 m/s ≈ 4:33/km (estimado via Daniels VDOT a partir
-  da meia 1:40:09 em 15/03/2026; revisitar após próxima prova oficial)
+  da meia 1:40:09 em 15/03/2026; revisitar — nova meia PR de 1:39:01 em
+  07/06/2026 (Floripa 21Km) sugere recalcular o VDOT)
 - Sexo: masculino
   
 ## Contexto de Treino/Objetivo Atual
-Faço corrida e musculação há quase 1 ano e meio, minha rotina de treinos de musculação são de 2-3x na semana (sendo 2 de funcional e 1 musculação) e de corrida é de 3-4x na semana (normalmente 2 treinos de rodage, 1 intervalado/fartlek e 1 longão de sábado). Meu objetivo atual é melhorar minha performance na corrida, atualmente estou me preparando para uma maratona em Julho. Meu histórico de provas tem destaque com as meias maratonas, completei 7 até o momento e até a maratona tenho mais uma prova de 21Km e outra de 25Km para fazer.
+Faço corrida e musculação há quase 1 ano e meio, minha rotina de treinos de musculação são de 2-3x na semana (sendo 2 de funcional e 1 musculação) e de corrida é de 3-4x na semana (normalmente 2 treinos de rodage, 1 intervalado/fartlek e 1 longão de sábado). Meu objetivo atual é melhorar minha performance na corrida, atualmente estou me preparando para uma maratona em Julho. Meu histórico de provas tem destaque com as meias maratonas, completei 8 até o momento (a mais recente, Floripa 21Km em 07/06/2026, foi PR: 1:39:01) e até a maratona ainda tenho uma prova de 25Km para fazer.
 
 ## Status atual dos dados
-Streams: 100% completos (306/306 atividades). Último download: 16/05/2026.
+Streams: 100% completos (327/327 atividades). Último download: 10/06/2026.
 `athlete_config`: populado (LTHR, FCmáx, FCrest, threshold_pace_mps, sex).
-`compute-metrics` (último run em 16/05/2026) computa via stream:
+`compute-metrics` (último run em 10/06/2026) computa via stream:
 - EF e decoupling (efficiency)
 - Zonas Z1-Z5 (fix #16 — antes usava só FC média e jogava tudo numa zona)
 - `r_tss` populado em 100% das 198 corridas (fix #18 — antes 0%)
@@ -60,7 +61,7 @@ Bundle pré-D4 (3 itens [Alta] do `BACKLOG.md`): concluído.
 - ✅ Best efforts via streams (PR #22)
 
 D4 (marts de prova): concluído.
-- ✅ `seeds/manual_races.csv` (12 provas, 7 meias completadas)
+- ✅ `seeds/manual_races.csv` (13 provas, 8 meias completadas)
 - ✅ `dim_race` (identificação combinada: seed + workout_type=1)
 - ✅ `fct_pr_efforts` (best efforts ranked, is_pr/is_segment)
 - ✅ `fct_race_performance` (tempo/pace/CTL/TSB/clima/Riegel→42K/rank entre meias)
@@ -76,8 +77,9 @@ D6 (Streamlit completo): concluído (100%).
   estilos selecionáveis, bolhas proporcionais à frequência do cluster
 - ✅ Screenshots no README + docs/DASHBOARD.md (branch docs/readme-dashboard-section)
 
-Ciclo atual de maratona: NB Porto Alegre em 12/07/2026. Hoje (16/05/2026)
-estamos na semana 8 de 16, CTL ~58. Página 7 mostra a trajetória.
+Ciclo atual de maratona: NB Porto Alegre em 12/07/2026. Hoje (10/06/2026)
+estamos na semana ~12 de 16, CTL ~59 (TSB -1.7, ACWR 1.03 — "productive").
+Página 7 mostra a trajetória.
 
 Stack: SQLite (operational, MCP) + DuckDB (analytics, dbt).
 
