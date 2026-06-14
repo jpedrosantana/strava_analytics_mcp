@@ -158,6 +158,23 @@ Decisão atual em [ADR 0002](decisions/0002-weather-integration-optional.md): po
 
 ---
 
+## Conteúdo / Divulgação
+
+### [Baixa] Gancho de artigo — "o mesmo MCP, três modelos" (portabilidade cross-LLM)
+
+**Contexto:** o MCP é um protocolo aberto e agnóstico de modelo — o servidor `strava-analytics` não tem nada de Claude embutido; quem precisa "falar MCP" é o cliente/host, não o LLM. OpenAI (Agents SDK) e Google (Gemini) adotaram o MCP, então um cliente baseado em GPT ou Gemini pluga no mesmo servidor **sem nenhuma mudança de código**.
+
+**Gancho para o artigo futuro** (cf. fechamento do post: "penso em escrever um artigo detalhando todo o processo de discovery e desenvolvimento"): demonstrar a **portabilidade** apontando ≥2 clientes/modelos diferentes para o mesmo `uv run strava-mcp serve` (ex.: Claude Code, Cursor+GPT, SDK do Gemini), rodando o mesmo conjunto de perguntas (forma atual, previsão de prova) e comparando as respostas. Tese visual: "uma fonte de dados, qualquer modelo".
+
+**Como demonstrar (POC leve):**
+- Configurar um 2º cliente MCP não-Claude (Cursor/Windsurf com GPT, OpenAI Agents SDK ou Gemini SDK) apontando para o mesmo comando do servidor.
+- Rodar um conjunto fixo de prompts e capturar screenshots das respostas dos diferentes modelos.
+- Anotar diferenças de tool-calling / formatação por modelo — insumo direto para o item **[Média] Envelope padronizado para tools MCP** (Arquitetura e MCP).
+
+**Impacto:** material concreto e diferenciado para o artigo; reforça a tese de complementaridade/portabilidade e valida empiricamente que o servidor é vendor-neutral. Zero mudança no código do servidor.
+
+---
+
 ## Concluído
 
 Itens originalmente listados aqui que já foram executados. Mantidos como histórico para rastreabilidade do "porquê" das mudanças no pipeline.

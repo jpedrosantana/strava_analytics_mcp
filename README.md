@@ -49,6 +49,10 @@ Este é um projeto pessoal e exploratório. As métricas e diagnósticos (TRIMP,
 
 ## Pré-requisitos
 
+> **Não é desenvolvedor?** O [Quickstart passo a passo](docs/QUICKSTART.md) cobre tudo do
+> zero — instalar o necessário, criar o app na Strava, rodar e testar — sem assumir
+> experiência prévia com linha de comando.
+
 - Python 3.11+
 - [uv](https://docs.astral.sh/uv/)
 - Conta Strava com app criado em [developers.strava.com](https://developers.strava.com)
@@ -192,21 +196,28 @@ A página **Provas** mostra os PRs em 8 distâncias padrão (1K–42K, com flag 
 
 ## Configuração do atleta
 
-Algumas métricas (TRIMP, zonas, hrTSS) são mais precisas com parâmetros configurados:
+Algumas métricas ficam mais precisas com seus parâmetros fisiológicos configurados:
+TRIMP e zonas usam **LTHR** e **FCmáx**; o **`r_tss`** (carga via pace) precisa do
+**threshold pace**. Sem o threshold pace, o `r_tss` fica nulo e a carga cai de volta
+para o `hrTSS`.
+
+Edite os valores no topo de [`scripts/seed_athlete_config.py`](scripts/seed_athlete_config.py)
+(`lthr`, `hr_max`, `hr_rest`, `threshold_pace_mps`, `sex`) e rode:
 
 ```bash
-sqlite3 data/strava.db "
-INSERT OR REPLACE INTO athlete_config VALUES ('lthr',    '165', datetime('now'));
-INSERT OR REPLACE INTO athlete_config VALUES ('hr_max',  '187', datetime('now'));
-INSERT OR REPLACE INTO athlete_config VALUES ('hr_rest', '50',  datetime('now'));
-INSERT OR REPLACE INTO athlete_config VALUES ('sex',     'male', datetime('now'));
-"
+uv run python scripts/seed_athlete_config.py   # popula athlete_config
+uv run strava-mcp compute-metrics              # reprocessa as métricas com os novos parâmetros
 ```
 
-Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico de corridas.
+> Use o script em vez de escrever SQL na mão: ele grava as **cinco** chaves de uma vez —
+> incluindo o `threshold_pace_mps`, fácil de esquecer e que deixa o `r_tss` nulo se faltar.
+
+Se não configurados, LTHR e FCmáx são estimados automaticamente do histórico de corridas
+(o threshold pace **não** é estimado — configure-o para popular o `r_tss`).
 
 ## Documentação
 
+- [Quickstart — começando do zero](docs/QUICKSTART.md) — guia passo a passo para quem não é desenvolvedor: instalar, criar o app na Strava, rodar e testar
 - [Métricas de Treinamento](docs/METRICS.md) — explicação de TRIMP, hrTSS, EF, Decoupling, CTL, ATL, TSB, ACWR e Status
 - [Dashboard Streamlit](docs/DASHBOARD.md) — tour das 8 páginas com screenshots e perguntas que cada uma responde
 - [Exemplos de System Prompts para Modo Coach](docs/COACH_PROMPTS.md) — templates para usar o MCP como treinador pessoal
