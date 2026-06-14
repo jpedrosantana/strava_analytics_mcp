@@ -60,8 +60,8 @@ Este é um projeto pessoal e exploratório. As métricas e diagnósticos (TRIMP,
 ## Instalação
 
 ```bash
-git clone https://github.com/<seu-usuario>/strava-analytics-mcp
-cd strava-analytics-mcp
+git clone https://github.com/jpedrosantana/strava_analytics_mcp
+cd strava_analytics_mcp
 cp .env.example .env          # preencha com CLIENT_ID e CLIENT_SECRET
 uv sync
 ```
