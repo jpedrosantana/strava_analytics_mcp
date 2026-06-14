@@ -73,12 +73,12 @@ Você tem duas opções — escolha a que achar mais simples:
 
 **Opção B (com git):**
 ```bash
-git clone https://github.com/<seu-usuario>/strava-analytics-mcp
+git clone https://github.com/jpedrosantana/strava_analytics_mcp
 ```
 
 Depois, **entre na pasta do projeto** no terminal:
 ```bash
-cd strava-analytics-mcp
+cd strava_analytics_mcp
 ```
 > Dica: digite `cd ` (com espaço) e arraste a pasta para dentro do terminal — ele
 > preenche o caminho sozinho.
@@ -205,7 +205,7 @@ tempo de maratona"), conecte o projeto ao **Claude Desktop**:
        "strava-analytics": {
          "command": "uv",
          "args": ["run", "strava-mcp", "serve"],
-         "cwd": "/caminho/absoluto/para/strava-analytics-mcp"
+         "cwd": "/caminho/absoluto/para/strava_analytics_mcp"
        }
      }
    }
