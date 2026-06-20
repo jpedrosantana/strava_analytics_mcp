@@ -16,34 +16,11 @@ Melhorias futuras identificadas mas não priorizadas: registrar em
 `docs/BACKLOG.md`. Antes de iniciar qualquer item dali, confirmar com
 o usuário e mover para o roadmap principal ou criar ADR específico.
 
-## Perfil do atleta
+## Contexto pessoal do atleta
 
-Parâmetros estimados pelo histórico de corridas (não de teste laboratorial).
-Valores ao vivo em `athlete_config` (populados via `scripts/seed_athlete_config.py`):
-
-- FCmáx: 201 bpm (registrado no Teste de 6Km em 28/02/2026)
-- LTHR: 177 bpm (média das FC em meias maratonas de prova: 173–179 bpm)
-- FCrest: 50 bpm (placeholder — medir ao acordar para refinar)
-- Threshold pace: 3,663 m/s ≈ 4:33/km (estimado via Daniels VDOT a partir
-  da meia 1:40:09 em 15/03/2026; revisitar — nova meia PR de 1:39:01 em
-  07/06/2026 (Floripa 21Km) sugere recalcular o VDOT)
-- Sexo: masculino
-  
-## Contexto de Treino/Objetivo Atual
-Faço corrida e musculação há quase 1 ano e meio, minha rotina de treinos de musculação são de 2-3x na semana (sendo 2 de funcional e 1 musculação) e de corrida é de 3-4x na semana (normalmente 2 treinos de rodage, 1 intervalado/fartlek e 1 longão de sábado). Meu objetivo atual é melhorar minha performance na corrida, atualmente estou me preparando para uma maratona em Julho. Meu histórico de provas tem destaque com as meias maratonas, completei 8 até o momento (a mais recente, Floripa 21Km em 07/06/2026, foi PR: 1:39:01) e até a maratona ainda tenho uma prova de 25Km para fazer.
-
-## Status atual dos dados
-Streams: 100% completos (327/327 atividades). Último download: 10/06/2026.
-`athlete_config`: populado (LTHR, FCmáx, FCrest, threshold_pace_mps, sex).
-`compute-metrics` (último run em 10/06/2026) computa via stream:
-- EF e decoupling (efficiency)
-- Zonas Z1-Z5 (fix #16 — antes usava só FC média e jogava tudo numa zona)
-- `r_tss` populado em 100% das 198 corridas (fix #18 — antes 0%)
-- `weather_temp_c` extraído do `raw_json.average_temp` em ~64% das corridas
-  (127/198; fix #19 — antes 0%; indoor naturalmente sem cobertura)
-- `activity_best_efforts` populado em 186 corridas outdoor / 516 esforços
-  em 1K–Meia (PR #22 — antes a tabela não existia)
-- 159 corridas outdoor têm lat/lng (alimenta D6 página de Rotas)
+Perfil fisiológico, objetivo atual e status dos dados ficam em
+`CLAUDE.local.md` (gitignored). Ao clonar o repo, crie o seu próprio
+a partir do template em `CLAUDE.local.example.md`.
 
 ## Roadmap em execução
 Fases 0-9 do roadmap principal: concluídas. Fase 10 (post público) aguarda
@@ -76,10 +53,6 @@ D6 (Streamlit completo): concluído (100%).
 - ✅ Página 6 (Rotas) — PR #27: DBSCAN haversine, mapa MapLibre com 5
   estilos selecionáveis, bolhas proporcionais à frequência do cluster
 - ✅ Screenshots no README + docs/DASHBOARD.md (branch docs/readme-dashboard-section)
-
-Ciclo atual de maratona: NB Porto Alegre em 12/07/2026. Hoje (10/06/2026)
-estamos na semana ~12 de 16, CTL ~59 (TSB -1.7, ACWR 1.03 — "productive").
-Página 7 mostra a trajetória.
 
 Stack: SQLite (operational, MCP) + DuckDB (analytics, dbt).
 

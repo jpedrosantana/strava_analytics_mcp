@@ -12,6 +12,7 @@ dbt_packages/
 **/.user.yml
 .claude/settings.local.json
 .mcp.json
+CLAUDE.local.md
 docs/ai_review/
 docs/PRODUCT_NOTES.md
 docs/POST_STRATEGY.md
